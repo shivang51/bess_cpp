@@ -1,0 +1,6 @@
+-xc++
+
+-Ibess/include
+
+-Iexternal/glad/include
+-Iexternal/glad/src
