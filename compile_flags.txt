@@ -4,3 +4,5 @@
 
 -Iexternal/glad/include
 -Iexternal/glad/src
+-Iexternal/imgui/
+-Iexternal/imgui/backends

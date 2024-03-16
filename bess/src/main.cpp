@@ -4,6 +4,10 @@
 #include "window.h"
 #include <vector>
 
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_opengl3.h"
+#include "imgui.h"
+
 extern "C" {
 #include "glad/glad.h"
 }
@@ -47,11 +51,13 @@ int main() {
     window.onWindowResize([](int w, int h) { glViewport(0, 0, w, h); });
 
     Bess::Gl::Renderer renderer;
-
     while (!window.isClosed()) {
         window.pollEvents();
         renderer.clear();
         renderer.draw(vao, ibo, shaderProgram);
+        renderer.begin();
+        ImGui::ShowDemoWindow();
+        renderer.end();
 
         window.update();
     }

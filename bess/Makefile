@@ -4,7 +4,8 @@ CXX_VERSION = c++20
 
 NAME = bess
 
-INCLUDE = -Iinclude/ -I../external/glad/include 
+INCLUDE = -Iinclude/ -I../external/glad/include -I../external/imgui -I../external/imgui/backends
+
 SRC_DIR = src
 
 TARGET_DIR = ../out/
@@ -14,10 +15,14 @@ SRC_FILES += $(wildcard $(SRC_DIR)/*.cpp)
 
 EXT_SRC_FILES = ../external/glad/src/glad.c
 
+EXT_SRC_FILES_CPP = $(wildcard ../external/imgui/*.cpp)
+EXT_SRC_FILES_CPP += $(wildcard ../external/imgui/*/*.cpp)
+
 TARGET = $(TARGET_DIR)$(NAME)
 
 OBJECTS = $(patsubst %.cpp, %.o,$(SRC_FILES))
 OBJECTS += $(patsubst %.c, %.o,$(EXT_SRC_FILES))
+OBJECTS += $(patsubst %.cpp, %.o,$(EXT_SRC_FILES_CPP))
 
 LIBS = -lglfw -lGL 
 

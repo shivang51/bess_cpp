@@ -10,8 +10,10 @@ class Ibo {
     ~Ibo();
     void bind() const;
     void unbind() const;
+    GLuint size() const;
 
   private:
     GLuint m_ibo_id;
+    GLuint m_size;
 };
 } // namespace Bess::Gl

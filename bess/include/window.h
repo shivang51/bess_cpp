@@ -33,11 +33,15 @@ class Window {
 
     static bool isGLFWInitialized;
     static bool isGladInitialized;
-
+    static bool isImguiInitialized;
     void onWindowResize(WindowResizeCallback callback);
 
   private:
     std::unique_ptr<GLFWwindow, GLFWwindowDeleter> mp_window;
     std::unordered_map<Callback, std::any> m_callbacks;
+
+    void initImgui();
+    void initOpenGL();
+    void initGLFW();
 };
 } // namespace Bess

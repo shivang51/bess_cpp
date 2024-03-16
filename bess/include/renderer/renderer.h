@@ -7,6 +7,10 @@ namespace Bess::Gl {
 class Renderer {
   public:
     Renderer() = default;
+
+    void begin();
+    void end();
+
     void draw(const Vao &vao, const Ibo &ibo, const Shader &shader) const;
     void clear() const;
 };
