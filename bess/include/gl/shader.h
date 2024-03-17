@@ -7,7 +7,7 @@ namespace Bess::Gl {
 class Shader {
   public:
     Shader() = default;
-    Shader(const char *vertexPath, const char *fragmentPath);
+    Shader(const std::string &vertexPath, const std::string &fragmentPath);
     ~Shader();
 
     void bind() const;

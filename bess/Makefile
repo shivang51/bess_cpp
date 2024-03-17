@@ -11,6 +11,7 @@ SRC_DIR = src
 TARGET_DIR = ../out/
 
 SRC_FILES = $(wildcard $(SRC_DIR)/*/*.cpp)
+SRC_FILES += $(wildcard $(SRC_DIR)/*/*/*.cpp)
 SRC_FILES += $(wildcard $(SRC_DIR)/*.cpp)
 
 EXT_SRC_FILES = ../external/glad/src/glad.c

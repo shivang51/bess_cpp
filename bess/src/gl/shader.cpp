@@ -4,7 +4,7 @@
 #include <string>
 
 namespace Bess::Gl {
-Shader::Shader(const char *vertexPath, const char *fragmentPath) {
+Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath) {
     m_id = createProgram(vertexPath, fragmentPath);
 }
 

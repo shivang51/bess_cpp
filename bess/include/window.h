@@ -28,6 +28,7 @@ class Window {
     void update() const;
     void makeCurrent() const;
     bool isClosed() const;
+    void close() const;
 
     inline void pollEvents() const { glfwPollEvents(); }
 

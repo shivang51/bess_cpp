@@ -116,4 +116,6 @@ void Window::onWindowResize(WindowResizeCallback callback) {
     m_callbacks[Callback::WindowResize] = callback;
 }
 
+void Window::close() const { glfwSetWindowShouldClose(mp_window.get(), true); }
+
 } // namespace Bess

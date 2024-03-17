@@ -1,15 +1,26 @@
 #include "renderer/renderer.h"
+#include "gl/framebuffer.h"
+#include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
+#include "renderer/primitives/quad.h"
+#include <GL/gl.h>
 #include <GLFW/glfw3.h>
 
-namespace Bess::Gl {
-void Renderer::draw(const Vao &vao, const Ibo &ibo,
-                    const Shader &shader) const {
+namespace Bess::Renderer2D {
+
+void Renderer::draw(const Gl::Vao &vao, const Gl::Ibo &ibo,
+                    const Gl::Shader &shader) const {
     shader.bind();
     vao.bind();
     ibo.bind();
     glDrawElements(GL_TRIANGLES, ibo.size(), GL_UNSIGNED_INT, nullptr);
+}
+
+void Renderer::quad() {
+    if (!m_quad)
+        m_quad = std::make_unique<Primitives::Quad>();
+    m_quad->draw();
 }
 
 void Renderer::clear() const {
@@ -17,11 +28,22 @@ void Renderer::clear() const {
     glClearColor(0.2, 0.2, 0.2, 1.0f);
 }
 
+void Renderer::init() {
+    m_framebuffer = std::make_unique<Gl::FrameBuffer>(800, 500);
+}
+
 void Renderer::begin() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
+
+void Renderer::resizeFrameBuffer(ImVec2 size) const {
+    m_framebuffer->resize(size.x, size.y);
+    glViewport(0, 0, size.x, size.y);
+}
+
+ImVec2 Renderer::getFrameBufferSize() const { return m_framebuffer->getSize(); }
 
 void Renderer::end() {
     ImGuiIO &io = ImGui::GetIO();
@@ -36,4 +58,9 @@ void Renderer::end() {
     }
 }
 
-} // namespace Bess::Gl
+void Renderer::beginScene() { m_framebuffer->bind(); }
+void Renderer::endScene() { m_framebuffer->unbind(); }
+
+GLuint Renderer::getData() const { return m_framebuffer->getTexture(); }
+
+} // namespace Bess::Renderer2D

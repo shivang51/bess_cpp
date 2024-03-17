@@ -11,13 +11,16 @@ extern "C" {
 namespace Bess::Gl {
 class Vao {
   public:
+    Vao() = default;
     Vao(const std::vector<Vertex> &vertices);
     ~Vao();
 
     void bind() const;
     void unbind() const;
+    GLuint getId() const;
 
   private:
-    GLuint m_vao_id, m_vbo_id;
+    std::vector<Vertex> m_vertices;
+    GLuint m_vao_id = -1, m_vbo_id = -1;
 };
 } // namespace Bess::Gl
