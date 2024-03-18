@@ -1,5 +1,6 @@
 #include "gl/framebuffer.h"
 #include "imgui.h"
+#include <glm/fwd.hpp>
 #include <iostream>
 
 namespace Bess::Gl {
@@ -63,5 +64,5 @@ void FrameBuffer::resize(float width, float height) {
                               GL_RENDERBUFFER, m_rbo);
 }
 
-ImVec2 FrameBuffer::getSize() const { return ImVec2(m_width, m_height); }
+glm::vec2 FrameBuffer::getSize() const { return {m_width, m_height}; }
 } // namespace Bess::Gl

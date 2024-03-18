@@ -1,6 +1,7 @@
 #pragma once
 #include "glad/glad.h"
 #include "imgui.h"
+#include <glm/glm.hpp>
 
 namespace Bess::Gl {
 class FrameBuffer {
@@ -10,7 +11,7 @@ class FrameBuffer {
 
     GLuint getTexture() const;
 
-    ImVec2 getSize() const;
+    glm::vec2 getSize() const;
 
     void bind() const;
     void unbind() const;

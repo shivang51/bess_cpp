@@ -19,10 +19,8 @@ class Renderer {
 
     void init();
 
-    void begin();
-    void end();
-
     void beginScene();
+
     void endScene();
 
     void draw(const Gl::Vao &vao, const Gl::Ibo &ibo,
@@ -38,7 +36,7 @@ class Renderer {
 
     void resize(glm::vec2 size) const;
 
-    ImVec2 getFrameBufferSize() const;
+    glm::vec2 getFrameBufferSize() const;
 
   private:
     std::unique_ptr<Primitives::Quad> m_quad;

@@ -7,6 +7,7 @@
 #include "renderer/primitives/quad.h"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <glm/fwd.hpp>
 
 namespace Bess::Renderer2D {
 
@@ -26,19 +27,13 @@ void Renderer::quad() {
 
 void Renderer::clear() const {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glClearColor(0.1, 0.1, 0.1, 1.0f);
+    glClearColor(0.1f, 0.1, 0.1, 1.0f);
 }
 
 void Renderer::init() {
     m_camera = std::make_unique<Camera>();
     m_camera->resize(800, 500);
     m_framebuffer = std::make_unique<Gl::FrameBuffer>(800, 500);
-}
-
-void Renderer::begin() {
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
 }
 
 void Renderer::resize(glm::vec2 size) const {
@@ -49,19 +44,8 @@ void Renderer::resize(glm::vec2 size) const {
 
 Camera *Renderer::getCamera() { return m_camera.get(); }
 
-ImVec2 Renderer::getFrameBufferSize() const { return m_framebuffer->getSize(); }
-
-void Renderer::end() {
-    ImGuiIO &io = ImGui::GetIO();
-    ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        GLFWwindow *backup_current_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backup_current_context);
-    }
+glm::vec2 Renderer::getFrameBufferSize() const {
+    return m_framebuffer->getSize();
 }
 
 void Renderer::beginScene() { m_framebuffer->bind(); }
