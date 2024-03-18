@@ -52,7 +52,7 @@ std::string Shader::readFile(const std::string &path) {
         size_t fileSize = fileStream.tellg();
         content.resize(fileSize);
         fileStream.seekg(0);
-        fileStream.read(content.data(), fileSize);
+        fileStream.read((char *)content.data(), fileSize);
         fileStream.close();
     } else {
         std::cerr << "Could not read file " << path << std::endl;
