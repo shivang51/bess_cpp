@@ -1,7 +1,7 @@
 #pragma once
 #include "glad/glad.h"
 
-#include <glm/fwd.hpp>
+#include <glm.hpp>
 #include <string>
 
 namespace Bess::Gl {
