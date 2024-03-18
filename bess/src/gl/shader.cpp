@@ -1,5 +1,6 @@
 #include "gl/shader.h"
 #include <fstream>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <string>
 
@@ -76,4 +77,15 @@ GLuint Shader::compileShader(const std::string &shaderSrc, GLenum shaderType) {
 
     return shaderId;
 }
+
+void Shader::setUniformVec4(const std::string &name, const glm::vec4 &value) {
+    glUniform4fv(glGetUniformLocation(m_id, name.c_str()), 1,
+                 glm::value_ptr(value));
+}
+
+void Shader::setUniformMat4(const std::string &name, const glm::mat4 &value) {
+    glUniformMatrix4fv(glGetUniformLocation(m_id, name.c_str()), 1, GL_FALSE,
+                       glm::value_ptr(value));
+}
+
 } // namespace Bess::Gl

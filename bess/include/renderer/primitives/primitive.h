@@ -11,7 +11,7 @@ class Primitive {
 
     ~Primitive();
 
-    virtual void draw() const = 0;
+    virtual void draw(const glm::mat4 &mvp) const = 0;
 
   protected:
     Gl::Vao *m_vao;

@@ -1,6 +1,7 @@
 #pragma once
 #include "glad/glad.h"
 
+#include <glm/fwd.hpp>
 #include <string>
 
 namespace Bess::Gl {
@@ -12,6 +13,9 @@ class Shader {
 
     void bind() const;
     void unbind() const;
+
+    void setUniformVec4(const std::string &name, const glm::vec4 &value);
+    void setUniformMat4(const std::string &name, const glm::mat4 &value);
 
   private:
     GLuint m_id;

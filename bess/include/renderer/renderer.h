@@ -7,7 +7,10 @@
 
 #include "imgui.h"
 #include "primitives/quad.h"
+#include "renderer/camera.h"
 #include <memory>
+
+#include "camera.h"
 
 namespace Bess::Renderer2D {
 class Renderer {
@@ -29,15 +32,18 @@ class Renderer {
 
     GLuint getData() const;
 
+    Camera *getCamera();
+
     void clear() const;
 
-    void resizeFrameBuffer(ImVec2 size) const;
+    void resize(glm::vec2 size) const;
 
     ImVec2 getFrameBufferSize() const;
 
   private:
     std::unique_ptr<Primitives::Quad> m_quad;
     std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
+    std::unique_ptr<Renderer2D::Camera> m_camera;
 };
 
 } // namespace Bess::Renderer2D

@@ -2,6 +2,7 @@
 #include "gl/gl_wrapper.h"
 #include "gl/utils.h"
 #include "gl/vao.h"
+#include "glm/glm.hpp"
 #include "renderer/primitives/primitive.h"
 #include <iostream>
 
@@ -25,11 +26,13 @@ Quad::Quad() {
 
 Quad::~Quad() {}
 
-void Quad::draw() const {
+void Quad::draw(const glm::mat4 &mvp) const {
     m_vao->bind();
     m_ibo->bind();
     m_shader->bind();
-
+    glm::vec4 color(0.9f, 0.6f, 0.4f, 1.0f);
+    m_shader->setUniformVec4("u_color", color);
+    m_shader->setUniformMat4("u_mvp", mvp);
     GL_CHECK(
         glDrawElements(GL_TRIANGLES, m_ibo->size(), GL_UNSIGNED_INT, nullptr));
 }

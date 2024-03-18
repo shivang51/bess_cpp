@@ -6,3 +6,4 @@
 -Iexternal/glad/src
 -Iexternal/imgui/
 -Iexternal/imgui/backends
+-Iexternal/glm/

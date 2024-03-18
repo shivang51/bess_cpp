@@ -4,7 +4,7 @@ CXX_VERSION = c++20
 
 NAME = bess
 
-INCLUDE = -Iinclude/ -I../external/glad/include -I../external/imgui -I../external/imgui/backends
+INCLUDE = -Iinclude/ -I../external/glad/include -I../external/imgui -I../external/imgui/backends -I../external/glm
 
 SRC_DIR = src
 
@@ -26,6 +26,15 @@ OBJECTS += $(patsubst %.c, %.o,$(EXT_SRC_FILES))
 OBJECTS += $(patsubst %.cpp, %.o,$(EXT_SRC_FILES_CPP))
 
 LIBS = -lglfw -lGL 
+
+LIB_INCLUDE_DIRS = -L../out/
+
+ifeq ($(OS),Windows_NT)
+	$(info "Windows Detected")
+	INCLUDE += -I../external/glfw/include
+	LIB_INCLUDE_DIRS += -L../external/glfw/lib-mingw-w64
+	LIBS += -lopengl32 -lglfw3dll
+endif
 
 DEPS = $(OBJECTS)
 

@@ -7,7 +7,7 @@ class Quad : public Primitive {
     Quad();
     ~Quad();
 
-    void draw() const override;
+    void draw(const glm::mat4 &mvp) const;
 
   private:
     std::vector<Bess::Gl::Vertex> m_vertices;

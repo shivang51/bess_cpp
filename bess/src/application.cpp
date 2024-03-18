@@ -41,9 +41,21 @@ void Application::drawUI() {
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockspace_id, viewport->Size);
 
-    ImGui::Begin("Hello, world!");
-    ImGui::Button("Look at this pretty button");
+    static float zoom = 1.0f;
+    static float x = 0.0f;
+    static float y = 0.0f;
+    ImGui::Begin("Settings");
+    ImGui::Text("Camera Controls");
+    if (ImGui::SliderFloat("Zoom", &zoom, 0.1f, 2.0f)) {
+        m_renderer.getCamera()->setZoom(zoom);
+    }
 
+    if (ImGui::SliderFloat("X", &x, -2.0f, 2.0f)) {
+        m_renderer.getCamera()->setPos({x, y});
+    }
+    if (ImGui::SliderFloat("Y", &y, -2.0f, 2.0f)) {
+        m_renderer.getCamera()->setPos({x, y});
+    }
     ImGui::End();
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -51,9 +63,9 @@ void Application::drawUI() {
     auto viewportPanelSize = ImGui::GetContentRegionAvail();
     if (viewportPanelSize.x != m_renderer.getFrameBufferSize().x ||
         viewportPanelSize.y != m_renderer.getFrameBufferSize().y) {
-        m_renderer.resizeFrameBuffer(viewportPanelSize);
+        m_renderer.resize({viewportPanelSize.x, viewportPanelSize.y});
     }
-    auto texture = m_renderer.getData();
+    GLuint64 texture = m_renderer.getData();
     ImGui::Image((void *)texture,
                  ImVec2(viewportPanelSize.x, viewportPanelSize.y), ImVec2(0, 1),
                  ImVec2(1, 0));
