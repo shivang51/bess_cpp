@@ -1,7 +1,9 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <glm/glm.hpp>
+#include "fwd.hpp"
+#include "glad/glad.h"
+#include "glm.hpp"
+#include "imgui.h"
 
 namespace Bess {
 struct UIState {
@@ -19,10 +21,14 @@ class UI {
 
     static UIState state;
 
+    static glm::vec2 dPos;
+    static glm::vec2 dSize;
+
   private:
     static void drawSettings();
     static void drawViewport();
     static void begin();
     static void end();
+    static ImGuiID mainDockspaceId;
 };
 } // namespace Bess

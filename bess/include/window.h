@@ -1,7 +1,6 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
-#include <algorithm>
 #include <any>
 #include <functional>
 #include <memory>
@@ -12,9 +11,11 @@ namespace Bess {
 
 enum Callback {
     WindowResize,
+    MouseWheel,
 };
 
 typedef std::function<void(int, int)> WindowResizeCallback;
+typedef std::function<void(double, double)> MouseWheelCallback;
 
 class Window {
   public:
@@ -30,12 +31,14 @@ class Window {
     bool isClosed() const;
     void close() const;
 
-    inline void pollEvents() const { glfwPollEvents(); }
+    inline void pollEvents() const { glfwWaitEvents(); }
 
     static bool isGLFWInitialized;
     static bool isGladInitialized;
     static bool isImguiInitialized;
+
     void onWindowResize(WindowResizeCallback callback);
+    void onMouseWheel(MouseWheelCallback callback);
 
   private:
     std::unique_ptr<GLFWwindow, GLFWwindowDeleter> mp_window;

@@ -1,6 +1,5 @@
 #include "gl/framebuffer.h"
-#include "imgui.h"
-#include <glm/fwd.hpp>
+#include "glm.hpp"
 #include <iostream>
 
 namespace Bess::Gl {

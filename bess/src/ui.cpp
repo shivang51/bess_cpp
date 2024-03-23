@@ -1,19 +1,25 @@
 #include "ui.h"
 
 #include "glad/glad.h"
+#include "gtc/type_ptr.hpp"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
-#include <iostream>
 
 namespace Bess {
 UIState UI::state{};
+
+glm::vec2 UI::dPos = {-0.25, 0.25};
+glm::vec2 UI::dSize = {0.5, 0.5};
 
 void UI::draw() {
     begin();
     drawSettings();
     drawViewport();
+    ImGui::Begin("Properties");
+    ImGui::SliderFloat2("Pos", glm::value_ptr(dPos), -1.0f, 1.0f);
+    ImGui::End();
     end();
 }
 
@@ -22,21 +28,20 @@ void UI::setViewportTexture(GLuint64 texture) {
 }
 
 void UI::drawSettings() {
+    // auto mainDockspaceId = ImGui::GetID("MainDockspace");
+    // ImGui::SetNextWindowDockID(mainDockspaceId);
     ImGui::Begin("Settings");
     ImGui::Text("Camera Controls");
     ImGui::SliderFloat("Zoom", &state.cameraZoom, 0.1f, 2.0f);
 
-    float *x = &state.cameraPos.x;
-    float *y = &state.cameraPos.y;
-    ImGui::SliderFloat("X", x, -2.0f, 2.0f);
-
-    ImGui::SliderFloat("Y", y, -2.0f, 2.0f);
+    ImGui::SliderFloat2("Camera Pos", glm::value_ptr(state.cameraPos), -1.0f,
+                        1.0f);
     ImGui::End();
 }
 
 void UI::drawViewport() {
     ImGuiWindowFlags flags =
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
+        // ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove |
         ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
@@ -78,10 +83,8 @@ void UI::begin() {
     ImGui::PopStyleVar();
 
     ImGui::PopStyleVar(2);
-
-    ImGuiIO &io = ImGui::GetIO();
-    ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-    ImGui::DockSpace(dockspace_id, viewport->Size);
+    auto mainDockspaceId = ImGui::GetID("MainDockspace");
+    ImGui::DockSpace(mainDockspaceId, viewport->Size);
 }
 
 void UI::end() {

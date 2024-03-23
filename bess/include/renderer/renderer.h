@@ -1,12 +1,10 @@
 #pragma once
 
 #include "gl/framebuffer.h"
-#include "gl/ibo.h"
 #include "gl/shader.h"
 #include "gl/vao.h"
 
-#include "imgui.h"
-#include "primitives/quad.h"
+#include "gl/vertex.h"
 #include "renderer/camera.h"
 #include <memory>
 
@@ -19,14 +17,12 @@ class Renderer {
 
     void init();
 
-    void beginScene();
+    void begin();
 
-    void endScene();
+    void end();
 
-    void draw(const Gl::Vao &vao, const Gl::Ibo &ibo,
-              const Gl::Shader &shader) const;
-
-    void quad();
+    void quad(const glm::vec2 &pos, const glm::vec2 &size,
+              const glm::vec3 &color);
 
     GLuint getData() const;
 
@@ -39,9 +35,17 @@ class Renderer {
     glm::vec2 getFrameBufferSize() const;
 
   private:
-    std::unique_ptr<Primitives::Quad> m_quad;
+    std::unique_ptr<Gl::Shader> m_shader;
+    std::unique_ptr<Gl::Vao> m_vao;
     std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
     std::unique_ptr<Renderer2D::Camera> m_camera;
+
+    std::vector<Gl::Vertex> m_vertices = {};
+
+    void flush();
+
+    void createQuad(const glm::vec2 &pos, const glm::vec2 &size,
+                    const glm::vec3 &color);
 };
 
 } // namespace Bess::Renderer2D

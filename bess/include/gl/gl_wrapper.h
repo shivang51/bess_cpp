@@ -1,6 +1,8 @@
 #pragma once
 
+extern "C" {
 #include "glad/glad.h"
+}
 
 void GLClearError();
 

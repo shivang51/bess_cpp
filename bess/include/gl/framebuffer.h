@@ -1,7 +1,6 @@
 #pragma once
+#include "fwd.hpp"
 #include "glad/glad.h"
-#include "imgui.h"
-#include <glm/glm.hpp>
 
 namespace Bess::Gl {
 class FrameBuffer {

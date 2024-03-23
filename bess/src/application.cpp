@@ -1,14 +1,21 @@
 #include "application.h"
-#include "gl/utils.h"
-#include "renderer/primitives/quad.h"
-#include "renderer/renderer.h"
+#include "fwd.hpp"
 #include "ui.h"
-#include <iostream>
 
 namespace Bess {
 Application::Application() : m_window(800, 600, "Bess") {
     m_window.onWindowResize([](int w, int h) {
         // glViewport(0, 0, w, h);
+    });
+
+    m_window.onMouseWheel([](double x, double y) {
+        float delta = y * 0.1f;
+        UI::state.cameraZoom += delta;
+        if (UI::state.cameraZoom < 0.1f) {
+            UI::state.cameraZoom = 0.1f;
+        } else if (UI::state.cameraZoom > 2.0f) {
+            UI::state.cameraZoom = 2.f;
+        }
     });
     m_renderer.init();
 }
@@ -38,10 +45,20 @@ void Application::drawUI() {
 }
 
 void Application::drawScene() {
-    m_renderer.beginScene();
-    m_renderer.clear();
-    m_renderer.quad();
-    m_renderer.endScene();
+    m_renderer.begin();
+
+    for (float y = -10.0; y <= 10.0; y += 0.25) {
+        for (float x = -10.0; x <= 10.0; x += 0.25) {
+            glm::vec3 color = {(x + 10.0) / 20.0, 0.2f, (y + 10.0) / 4.0};
+            m_renderer.quad({x, y}, {0.25, 0.25}, color);
+        }
+    }
+
+    m_renderer.quad(UI::dPos, UI::dSize, {0.9f, 0.6f, 0.4f});
+    m_renderer.quad({UI::dPos.x / 2, UI::dPos.y / 2},
+                    {UI::dSize.x / 2, UI::dSize.y / 2}, {1.f, 1.f, 1.f});
+
+    m_renderer.end();
 }
 
 void Application::run() {

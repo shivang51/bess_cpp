@@ -1,6 +1,6 @@
 #include "gl/shader.h"
+#include "gtc/type_ptr.hpp"
 #include <fstream>
-#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <string>
 
@@ -11,7 +11,7 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath) {
 
 Shader::~Shader() { glDeleteProgram(m_id); }
 
-void Shader::bind() const { glUseProgram(m_id); }
+void Shader::bind() const { GL_CHECK(glUseProgram(m_id)); }
 
 void Shader::unbind() const { glUseProgram(0); }
 

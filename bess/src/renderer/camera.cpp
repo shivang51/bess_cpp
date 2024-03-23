@@ -1,7 +1,6 @@
 #include "renderer/camera.h"
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/fwd.hpp>
+#include "ext/matrix_clip_space.hpp"
+#include "ext/matrix_transform.hpp"
 
 namespace Bess::Renderer2D {
 Camera::Camera() : m_pos(0.0f), m_zoom(1.0f) {}
@@ -9,7 +8,7 @@ Camera::Camera() : m_pos(0.0f), m_zoom(1.0f) {}
 Camera::~Camera() {}
 
 void Camera::setPos(const glm::vec2 &pos) {
-    m_pos = pos;
+    m_pos = {-pos.x, pos.y};
     updateTransform();
 }
 
@@ -52,7 +51,7 @@ void Camera::resize(float width, float height) {
 void Camera::recalculateOrtho() {
     float xSpan = m_aspectRatio / m_zoom;
     float ySpan = 1.0f / m_zoom;
-    m_ortho = glm::ortho(xSpan, -xSpan, -ySpan, ySpan, -1.0f, 1.0f);
+    m_ortho = glm::ortho(-xSpan, xSpan, -ySpan, ySpan, -1.0f, 1.0f);
 }
 
 glm::mat4 Camera::getTransform() const { return transform; }

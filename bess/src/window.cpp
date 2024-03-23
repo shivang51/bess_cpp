@@ -1,10 +1,10 @@
-extern "C" {
-#include "glad/glad.h"
-}
+#define GLFW_INCLUDE_NONE
+#include "window.h"
+#include "gl/gl_wrapper.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
-#include "window.h"
+#include <GLFW/glfw3.h>
 #include <iostream>
 #include <memory>
 
@@ -46,6 +46,15 @@ Window::Window(int width, int height, const std::string &title) {
             cb(w, h);
         });
 
+    glfwSetScrollCallback(window, [](GLFWwindow *window, double x, double y) {
+        auto this_ = (Window *)glfwGetWindowUserPointer(window);
+        if (this_->m_callbacks.find(Callback::WindowResize) ==
+            this_->m_callbacks.end())
+            return;
+        auto cb = std::any_cast<MouseWheelCallback>(
+            this_->m_callbacks[Callback::MouseWheel]);
+        cb(x, y);
+    });
     this->initOpenGL();
     this->initImgui();
 }
@@ -116,6 +125,9 @@ void Window::onWindowResize(WindowResizeCallback callback) {
     m_callbacks[Callback::WindowResize] = callback;
 }
 
+void Window::onMouseWheel(MouseWheelCallback callback) {
+    m_callbacks[Callback::MouseWheel] = callback;
+}
 void Window::close() const { glfwSetWindowShouldClose(mp_window.get(), true); }
 
 } // namespace Bess

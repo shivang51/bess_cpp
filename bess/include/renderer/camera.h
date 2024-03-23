@@ -1,6 +1,6 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include "glm.hpp"
 
 namespace Bess::Renderer2D {
 class Camera {

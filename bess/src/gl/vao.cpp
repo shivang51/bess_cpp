@@ -5,27 +5,19 @@
 
 #include "gl/gl_wrapper.h"
 #include "gl/vertex.h"
-#include "window.h"
 
 namespace Bess::Gl {
 
-Vao::Vao(const std::vector<Vertex> &vertices) {
-    std::cout << "Vertex: " << sizeof(Vertex) * vertices.size() << std::endl;
+Vao::Vao(size_t max_vertices, size_t max_indices) {
 
-    // m_vertices = vertices;
     GL_CHECK(glGenVertexArrays(1, &m_vao_id));
-    std::cout << "create vao with id " << m_vao_id << std::endl;
     GL_CHECK(glBindVertexArray(m_vao_id));
 
     GL_CHECK(glGenBuffers(1, &m_vbo_id));
     GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id));
 
-    GL_CHECK(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(),
-                          vertices.data(), GL_STATIC_DRAW));
-
-    // GL_CHECK(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) *
-    // m_vertices.size(),
-    //                       m_vertices.data(), GL_STATIC_DRAW));
+    GL_CHECK(glBufferData(GL_ARRAY_BUFFER, max_vertices * sizeof(Vertex),
+                          nullptr, GL_DYNAMIC_DRAW));
 
     GL_CHECK(glEnableVertexAttribArray(0));
     GL_CHECK(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
@@ -35,13 +27,24 @@ Vao::Vao(const std::vector<Vertex> &vertices) {
     GL_CHECK(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                                    (const void *)offsetof(Vertex, color)));
 
+    std::vector<GLuint> indices = {0, 1, 2, 2, 3, 0};
+
+    for (size_t i = 6; i < max_indices; i++) {
+        indices.push_back(indices[i - 6] + 4);
+    }
+
+    GL_CHECK(glGenBuffers(1, &m_ibo_id));
+    GL_CHECK(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ibo_id));
+    GL_CHECK(glBufferData(GL_ELEMENT_ARRAY_BUFFER, max_indices * sizeof(GLuint),
+                          indices.data(), GL_STATIC_DRAW));
+
     GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
     GL_CHECK(glBindVertexArray(0));
 }
 
 Vao::~Vao() {
-    std::cout << "deleting vao " << m_vao_id << std::endl;
     glDeleteBuffers(1, &m_vbo_id);
+    glDeleteBuffers(1, &m_ibo_id);
     glDeleteVertexArrays(1, &m_vao_id);
 }
 
@@ -53,4 +56,10 @@ void Vao::bind() const {
 }
 void Vao::unbind() const { glBindVertexArray(0); }
 
+void Vao::setVertices(const std::vector<Vertex> &vertices) {
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, m_vbo_id));
+    GL_CHECK(glBufferSubData(
+        GL_ARRAY_BUFFER, 0, sizeof(Vertex) * vertices.size(), vertices.data()));
+    GL_CHECK(glBindBuffer(GL_ARRAY_BUFFER, 0));
+}
 } // namespace Bess::Gl

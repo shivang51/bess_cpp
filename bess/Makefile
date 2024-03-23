@@ -4,8 +4,7 @@ CXX_VERSION = c++20
 
 NAME = bess
 
-INCLUDE = -Iinclude/ -I../external/glad/include -I../external/imgui -I../external/imgui/backends -I../external/glm -I../external
-
+INCLUDE = -Iinclude/ -I../external/glad/include -I../external/imgui -I../external/imgui/backends -I../external/glm 
 SRC_DIR = src
 
 TARGET_DIR = ../out/
