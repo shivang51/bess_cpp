@@ -1,8 +1,10 @@
 #pragma once
 
 #include "fwd.hpp"
+#include "gl/framebuffer.h"
 #include "renderer/renderer.h"
 #include "window.h"
+#include <memory>
 
 namespace Bess {
 class Application {
@@ -19,9 +21,13 @@ class Application {
     Window m_window;
     Renderer2D::Renderer m_renderer;
 
+    std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
+
   private:
     void drawUI();
     void drawScene();
+
+    bool isCursorInViewport();
 
     // callbacks
   private:
@@ -40,6 +46,6 @@ class Application {
     bool m_rightMousePressed = false;
     bool m_middleMousePressed = false;
 
-    glm::vec2 m_preMousePos = {0, 0};
+    glm::vec2 m_mousePos = {0, 0};
 };
 } // namespace Bess

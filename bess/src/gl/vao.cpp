@@ -27,6 +27,14 @@ Vao::Vao(size_t max_vertices, size_t max_indices) {
     GL_CHECK(glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex),
                                    (const void *)offsetof(Vertex, color)));
 
+    GL_CHECK(glEnableVertexAttribArray(2));
+    GL_CHECK(glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex),
+                                   (const void *)offsetof(Vertex, texCoord)));
+
+    GL_CHECK(glEnableVertexAttribArray(3));
+    GL_CHECK(glVertexAttribIPointer(3, 1, GL_INT, sizeof(Vertex),
+                                    (const void *)offsetof(Vertex, texIndex)));
+
     std::vector<GLuint> indices = {0, 1, 2, 2, 3, 0};
 
     for (size_t i = 6; i < max_indices; i++) {

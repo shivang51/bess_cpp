@@ -1,5 +1,6 @@
 #include "application.h"
 #include "fwd.hpp"
+#include "gl/framebuffer.h"
 #include "ui.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -17,8 +18,13 @@ namespace Bess {
 
 Application::Application() : m_window(800, 600, "Bess") {
 
+    m_framebuffer = std::make_unique<Gl::FrameBuffer>(800, 500);
+
     UI::init(m_window.getGLFWHandle());
+
     m_renderer.init();
+
+    UI::state.viewportTexture = m_framebuffer->getTexture();
 
     m_window.onWindowResize(BIND_EVENT_FN_2(onWindowResize));
     m_window.onMouseWheel(BIND_EVENT_FN_2(onMouseWheel));
@@ -36,13 +42,11 @@ Application::~Application() {
 }
 
 void Application::drawUI() {
-    if (UI::state.viewportTexture != m_renderer.getData()) {
-        UI::state.viewportTexture = m_renderer.getData();
-    }
-
     UI::draw();
 
-    if (m_renderer.getFrameBufferSize() != UI::state.viewportSize) {
+    if (m_framebuffer->getSize() != UI::state.viewportSize) {
+        m_framebuffer->resize(UI::state.viewportSize.x,
+                              UI::state.viewportSize.y);
         m_renderer.resize(UI::state.viewportSize);
     }
 
@@ -58,20 +62,34 @@ void Application::drawUI() {
 }
 
 void Application::drawScene() {
-    m_renderer.begin();
+    m_framebuffer->bind();
+
+    m_renderer.begin(UI::state.hoveredId);
 
     for (float y = -10.0; y <= 10.0; y += 0.25) {
         for (float x = -10.0; x <= 10.0; x += 0.25) {
             glm::vec3 color = {(x + 10.0) / 20.0, 0.2f, (y + 10.0) / 4.0};
-            m_renderer.quad({x, y}, {0.25, 0.25}, color);
+            m_renderer.quad({x, y}, {0.25, 0.25}, color, 0);
         }
     }
 
-    m_renderer.quad(UI::dPos, UI::dSize, {0.9f, 0.6f, 0.4f});
+    m_renderer.quad(UI::dPos, UI::dSize, {0.9f, 0.6f, 0.4f}, 1);
+
     m_renderer.quad({UI::dPos.x / 2, UI::dPos.y / 2},
-                    {UI::dSize.x / 2, UI::dSize.y / 2}, {1.f, 1.f, 1.f});
+                    {UI::dSize.x / 2, UI::dSize.y / 2}, {1.f, 1.f, 1.f}, 2);
 
     m_renderer.end();
+
+    if (isCursorInViewport()) {
+        const auto &viewportPos = UI::state.viewportPos;
+        const auto &viewportSize = UI::state.viewportSize;
+        auto x = m_mousePos.x - viewportPos.x;
+        auto y = m_mousePos.y - viewportPos.y;
+        y = viewportSize.y - y;
+        UI::state.hoveredId = m_framebuffer->readId(x, y);
+    }
+
+    m_framebuffer->unbind();
 }
 
 void Application::run() {
@@ -119,18 +137,7 @@ void Application::onLeftMouse(bool pressed) {
     if (!pressed)
         return;
 
-    std::cout << "Clicked at" << m_preMousePos.x << " " << m_preMousePos.y
-              << std::endl;
-
-    const auto &viewportPos = UI::state.viewportPos;
-    const auto &viewportSize = UI::state.viewportSize;
-
-    if (m_preMousePos.x > viewportPos.x &&
-        m_preMousePos.x < viewportPos.x + viewportSize.x &&
-        m_preMousePos.y > viewportPos.y &&
-        m_preMousePos.y < viewportPos.y + viewportSize.y) {
-        std::cout << "Clicked inside viewport" << std::endl;
-    }
+    UI::state.selectedId = UI::state.hoveredId;
 }
 
 void Application::onRightMouse(bool pressed) { m_rightMousePressed = pressed; }
@@ -140,15 +147,24 @@ void Application::onMiddleMouse(bool pressed) {
 }
 
 void Application::onMouseMove(double x, double y) {
-    double dx = x - m_preMousePos.x;
-    double dy = y - m_preMousePos.y;
+    double dx = x - m_mousePos.x;
+    double dy = y - m_mousePos.y;
 
     if (m_middleMousePressed) {
         UI::state.cameraPos.x -= (dx * 0.002) / UI::state.cameraZoom;
         UI::state.cameraPos.y -= (dy * 0.002) / UI::state.cameraZoom;
     }
 
-    m_preMousePos = {x, y};
+    m_mousePos = {x, y};
+}
+
+bool Application::isCursorInViewport() {
+    const auto &viewportPos = UI::state.viewportPos;
+    const auto &viewportSize = UI::state.viewportSize;
+    return m_mousePos.x > viewportPos.x &&
+           m_mousePos.x < viewportPos.x + viewportSize.x &&
+           m_mousePos.y > viewportPos.y &&
+           m_mousePos.y < viewportPos.y + viewportSize.y;
 }
 
 } // namespace Bess

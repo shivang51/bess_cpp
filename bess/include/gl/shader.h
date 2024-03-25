@@ -3,6 +3,7 @@
 #include "gl_wrapper.h"
 
 #include <string>
+#include <vector>
 
 namespace Bess::Gl {
 class Shader {
@@ -16,6 +17,9 @@ class Shader {
 
     void setUniformVec4(const std::string &name, const glm::vec4 &value);
     void setUniformMat4(const std::string &name, const glm::mat4 &value);
+    void setUniform1i(const std::string &name, int value);
+
+    void setUniformIV(const std::string &name, const std::vector<int> &value);
 
   private:
     GLuint m_id;

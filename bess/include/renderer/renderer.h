@@ -17,35 +17,27 @@ class Renderer {
 
     void init();
 
-    void begin();
+    void bindFramebuffer() const;
+
+    void begin(int selectedObjId = -1);
 
     void end();
 
     void quad(const glm::vec2 &pos, const glm::vec2 &size,
-              const glm::vec3 &color);
-
-    GLuint getData() const;
+              const glm::vec3 &color, const int texture);
 
     Camera *getCamera();
 
-    void clear() const;
-
     void resize(glm::vec2 size) const;
-
-    glm::vec2 getFrameBufferSize() const;
 
   private:
     std::unique_ptr<Gl::Shader> m_shader;
     std::unique_ptr<Gl::Vao> m_vao;
-    std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
     std::unique_ptr<Renderer2D::Camera> m_camera;
 
     std::vector<Gl::Vertex> m_vertices = {};
 
     void flush();
-
-    void createQuad(const glm::vec2 &pos, const glm::vec2 &size,
-                    const glm::vec3 &color);
 };
 
 } // namespace Bess::Renderer2D

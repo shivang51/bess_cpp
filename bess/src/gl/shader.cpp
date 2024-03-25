@@ -88,4 +88,14 @@ void Shader::setUniformMat4(const std::string &name, const glm::mat4 &value) {
                        glm::value_ptr(value));
 }
 
+void Shader::setUniform1i(const std::string &name, int value) {
+    GL_CHECK(glUniform1i(glGetUniformLocation(m_id, name.c_str()), value));
+}
+
+void Shader::setUniformIV(const std::string &name,
+                          const std::vector<int> &value) {
+    GL_CHECK(glUniform1iv(glGetUniformLocation(m_id, name.c_str()),
+                          value.size(), value.data()));
+}
+
 } // namespace Bess::Gl

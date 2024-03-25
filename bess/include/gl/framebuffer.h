@@ -1,10 +1,12 @@
 #pragma once
 #include "fwd.hpp"
-#include "glad/glad.h"
+#include "gl/gl_wrapper.h"
 
 namespace Bess::Gl {
 class FrameBuffer {
   public:
+    FrameBuffer() = default;
+
     FrameBuffer(int width, int height);
     ~FrameBuffer();
 
@@ -16,9 +18,15 @@ class FrameBuffer {
     void unbind() const;
     void resize(float width, float height);
 
+    int readId(int x, int y) const;
+    void readPixel(int x, int y) const;
+
+    void clear() const;
+
   private:
     GLuint m_fbo;
-    GLuint m_texture;
+    GLuint m_textures[2];
+    GLuint m_depth_texture;
     GLuint m_rbo;
 
     float m_width;

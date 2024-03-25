@@ -6,8 +6,6 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
-#include <iostream>
-#include <ostream>
 
 namespace Bess {
 UIState UI::state{};
@@ -110,6 +108,10 @@ void UI::drawViewport() {
                 state.viewportPos.y);
     ImGui::Text("Viewport Size: (%.2f, %.2f)", state.viewportSize.x,
                 state.viewportSize.y);
+
+    ImGui::Text("Hovered Id: %d", state.hoveredId);
+    ImGui::Text("Selected Id: %d", state.selectedId);
+
     ImGui::End();
 }
 

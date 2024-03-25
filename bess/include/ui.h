@@ -13,6 +13,9 @@ struct UIState {
     glm::vec2 viewportSize = {800, 500};
     glm::vec2 viewportPos = {0, 0};
     GLuint64 viewportTexture = 0;
+
+    int hoveredId = -1;
+    int selectedId = -1;
 };
 
 class UI {
