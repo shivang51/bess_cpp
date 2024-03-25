@@ -45,13 +45,13 @@ float Camera::getZoom() const { return m_zoom; }
 void Camera::resize(float width, float height) {
     m_aspectRatio = width / height;
     recalculateOrtho();
-    updateTransform();
 }
 
 void Camera::recalculateOrtho() {
     float xSpan = m_aspectRatio / m_zoom;
     float ySpan = 1.0f / m_zoom;
     m_ortho = glm::ortho(-xSpan, xSpan, -ySpan, ySpan, -1.0f, 1.0f);
+    updateTransform();
 }
 
 glm::mat4 Camera::getTransform() const { return transform; }

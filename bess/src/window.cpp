@@ -1,9 +1,6 @@
 #define GLFW_INCLUDE_NONE
 #include "window.h"
 #include "gl/gl_wrapper.h"
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <memory>
@@ -11,7 +8,6 @@
 namespace Bess {
 bool Window::isGLFWInitialized = false;
 bool Window::isGladInitialized = false;
-bool Window::isImguiInitialized = false;
 
 static void glfw_error_callback(int error, const char *description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
@@ -55,8 +51,73 @@ Window::Window(int width, int height, const std::string &title) {
             this_->m_callbacks[Callback::MouseWheel]);
         cb(x, y);
     });
+
+    glfwSetKeyCallback(window, [](GLFWwindow *window, int key, int scancode,
+                                  int action, int mods) {
+        auto this_ = (Window *)glfwGetWindowUserPointer(window);
+        switch (action) {
+        case GLFW_PRESS: {
+            if (this_->m_callbacks.find(Callback::KeyPress) ==
+                this_->m_callbacks.end())
+                return;
+            auto cb = std::any_cast<KeyPressCallback>(
+                this_->m_callbacks[Callback::KeyPress]);
+            cb(key);
+        } break;
+        case GLFW_RELEASE: {
+            if (this_->m_callbacks.find(Callback::KeyRelease) ==
+                this_->m_callbacks.end())
+                return;
+            auto cb = std::any_cast<KeyReleaseCallback>(
+                this_->m_callbacks[Callback::KeyRelease]);
+            cb(key);
+        } break;
+        }
+    });
+
+    glfwSetMouseButtonCallback(
+        window, [](GLFWwindow *window, int button, int action, int mods) {
+            auto this_ = (Window *)glfwGetWindowUserPointer(window);
+            switch (button) {
+            case GLFW_MOUSE_BUTTON_LEFT: {
+                if (this_->m_callbacks.find(Callback::LeftMouse) ==
+                    this_->m_callbacks.end())
+                    return;
+                auto cb = std::any_cast<LeftMouseCallback>(
+                    this_->m_callbacks[Callback::LeftMouse]);
+                cb(action == GLFW_PRESS);
+            } break;
+            case GLFW_MOUSE_BUTTON_RIGHT: {
+                if (this_->m_callbacks.find(Callback::RightMouse) ==
+                    this_->m_callbacks.end())
+                    return;
+                auto cb = std::any_cast<RightMouseCallback>(
+                    this_->m_callbacks[Callback::RightMouse]);
+                cb(action == GLFW_PRESS);
+            } break;
+            case GLFW_MOUSE_BUTTON_MIDDLE: {
+                if (this_->m_callbacks.find(Callback::MiddleMouse) ==
+                    this_->m_callbacks.end())
+                    return;
+                auto cb = std::any_cast<MiddleMouseCallback>(
+                    this_->m_callbacks[Callback::MiddleMouse]);
+                cb(action == GLFW_PRESS);
+            } break;
+            }
+        });
+
+    glfwSetCursorPosCallback(
+        window, [](GLFWwindow *window, double x, double y) {
+            auto this_ = (Window *)glfwGetWindowUserPointer(window);
+            if (this_->m_callbacks.find(Callback::MouseMove) ==
+                this_->m_callbacks.end())
+                return;
+            auto cb = std::any_cast<MouseMoveCallback>(
+                this_->m_callbacks[Callback::MouseMove]);
+            cb(x, y);
+        });
+
     this->initOpenGL();
-    this->initImgui();
 }
 
 void Window::initGLFW() {
@@ -76,38 +137,7 @@ void Window::initOpenGL() {
     }
 }
 
-void Window::initImgui() {
-    if (isImguiInitialized)
-        return;
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    (void)io;
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |=
-        ImGuiConfigFlags_NavEnableGamepad;            // Enable Gamepad Controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable
-    // Multi-Viewport / Platform Windows
-
-    ImGui::StyleColorsDark();
-    ImGuiStyle &style = ImGui::GetStyle();
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    ImGui_ImplGlfw_InitForOpenGL(mp_window.get(), true);
-    ImGui_ImplOpenGL3_Init("#version 330");
-    isImguiInitialized = true;
-    std::cout << "Initialized imgui" << std::endl;
-}
-
 Window::~Window() {
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
     this->mp_window.reset();
     glfwTerminate();
 }
@@ -128,6 +158,31 @@ void Window::onWindowResize(WindowResizeCallback callback) {
 void Window::onMouseWheel(MouseWheelCallback callback) {
     m_callbacks[Callback::MouseWheel] = callback;
 }
+
+void Window::onKeyPress(KeyPressCallback callback) {
+    m_callbacks[Callback::KeyPress] = callback;
+}
+
+void Window::onKeyRelease(KeyReleaseCallback callback) {
+    m_callbacks[Callback::KeyRelease] = callback;
+}
+
+void Window::onLeftMouse(LeftMouseCallback callback) {
+    m_callbacks[Callback::LeftMouse] = callback;
+}
+
+void Window::onRightMouse(RightMouseCallback callback) {
+    m_callbacks[Callback::RightMouse] = callback;
+}
+
+void Window::onMiddleMouse(MiddleMouseCallback callback) {
+    m_callbacks[Callback::MiddleMouse] = callback;
+}
+
+void Window::onMouseMove(MouseMoveCallback callback) {
+    m_callbacks[Callback::MouseMove] = callback;
+}
+
 void Window::close() const { glfwSetWindowShouldClose(mp_window.get(), true); }
 
 } // namespace Bess

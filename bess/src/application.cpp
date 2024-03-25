@@ -1,26 +1,39 @@
 #include "application.h"
 #include "fwd.hpp"
 #include "ui.h"
+#include <GLFW/glfw3.h>
+#include <iostream>
 
 namespace Bess {
-Application::Application() : m_window(800, 600, "Bess") {
-    m_window.onWindowResize([](int w, int h) {
-        // glViewport(0, 0, w, h);
-    });
 
-    m_window.onMouseWheel([](double x, double y) {
-        float delta = y * 0.1f;
-        UI::state.cameraZoom += delta;
-        if (UI::state.cameraZoom < 0.1f) {
-            UI::state.cameraZoom = 0.1f;
-        } else if (UI::state.cameraZoom > 2.0f) {
-            UI::state.cameraZoom = 2.f;
-        }
-    });
+#define BIND_EVENT_FN(fn) std::bind(&Application::fn, this)
+
+#define BIND_EVENT_FN_1(fn)                                                    \
+    std::bind(&Application::fn, this, std::placeholders::_1)
+
+#define BIND_EVENT_FN_2(fn)                                                    \
+    std::bind(&Application::fn, this, std::placeholders::_1,                   \
+              std::placeholders::_2)
+
+Application::Application() : m_window(800, 600, "Bess") {
+
+    UI::init(m_window.getGLFWHandle());
     m_renderer.init();
+
+    m_window.onWindowResize(BIND_EVENT_FN_2(onWindowResize));
+    m_window.onMouseWheel(BIND_EVENT_FN_2(onMouseWheel));
+    m_window.onKeyPress(BIND_EVENT_FN_1(onKeyPress));
+    m_window.onKeyRelease(BIND_EVENT_FN_1(onKeyRelease));
+    m_window.onLeftMouse(BIND_EVENT_FN_1(onLeftMouse));
+    m_window.onRightMouse(BIND_EVENT_FN_1(onRightMouse));
+    m_window.onMiddleMouse(BIND_EVENT_FN_1(onMiddleMouse));
+    m_window.onMouseMove(BIND_EVENT_FN_2(onMouseMove));
 }
 
-Application::~Application() { m_window.close(); }
+Application::~Application() {
+    UI::shutdown();
+    m_window.close();
+}
 
 void Application::drawUI() {
     if (UI::state.viewportTexture != m_renderer.getData()) {
@@ -71,6 +84,71 @@ void Application::run() {
         m_window.update();
     }
 }
+
 void Application::quit() { m_window.close(); }
+
+bool Application::isKeyPressed(int key) { return m_pressedKeys[key]; }
+
+// callbacks
+
+void Application::onWindowResize(int w, int h) {
+    // glViewport(0, 0, w, h);
+}
+
+void Application::onMouseWheel(double x, double y) {
+    float delta = y * 0.1f;
+
+    if (isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
+        UI::state.cameraZoom += delta;
+        if (UI::state.cameraZoom < 0.1f) {
+            UI::state.cameraZoom = 0.1f;
+        } else if (UI::state.cameraZoom > 2.0f) {
+            UI::state.cameraZoom = 2.f;
+        }
+    } else {
+        UI::state.cameraPos.y -= delta;
+    }
+}
+
+void Application::onKeyPress(int key) { m_pressedKeys[key] = true; }
+
+void Application::onKeyRelease(int key) { m_pressedKeys[key] = false; }
+
+void Application::onLeftMouse(bool pressed) {
+    m_leftMousePressed = pressed;
+    if (!pressed)
+        return;
+
+    std::cout << "Clicked at" << m_preMousePos.x << " " << m_preMousePos.y
+              << std::endl;
+
+    const auto &viewportPos = UI::state.viewportPos;
+    const auto &viewportSize = UI::state.viewportSize;
+
+    if (m_preMousePos.x > viewportPos.x &&
+        m_preMousePos.x < viewportPos.x + viewportSize.x &&
+        m_preMousePos.y > viewportPos.y &&
+        m_preMousePos.y < viewportPos.y + viewportSize.y) {
+        std::cout << "Clicked inside viewport" << std::endl;
+    }
+}
+
+void Application::onRightMouse(bool pressed) { m_rightMousePressed = pressed; }
+
+void Application::onMiddleMouse(bool pressed) {
+    m_middleMousePressed = pressed;
+}
+
+void Application::onMouseMove(double x, double y) {
+    double dx = x - m_preMousePos.x;
+    double dy = y - m_preMousePos.y;
+
+    if (m_middleMousePressed) {
+        UI::state.cameraPos.x -= (dx * 0.002) / UI::state.cameraZoom;
+        UI::state.cameraPos.y -= (dy * 0.002) / UI::state.cameraZoom;
+    }
+
+    m_preMousePos = {x, y};
+}
 
 } // namespace Bess
