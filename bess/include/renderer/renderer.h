@@ -1,6 +1,5 @@
 #pragma once
 
-#include "gl/framebuffer.h"
 #include "gl/shader.h"
 #include "gl/vao.h"
 
@@ -11,33 +10,46 @@
 #include "camera.h"
 
 namespace Bess::Renderer2D {
+
+struct RendererState {
+    Camera *camera = nullptr;
+};
+
 class Renderer {
   public:
     Renderer() = default;
 
-    void init();
+    static void init();
 
-    void bindFramebuffer() const;
+    static void begin();
 
-    void begin(int selectedObjId = -1);
+    static void end();
 
-    void end();
+    static void quad(const glm::vec2 &pos, const glm::vec2 &size,
+                     const glm::vec3 &color, const int texture);
 
-    void quad(const glm::vec2 &pos, const glm::vec2 &size,
-              const glm::vec3 &color, const int texture);
+    static void curve(const glm::vec2 &start, const glm::vec2 &end,
+                      const glm::vec3 &color, const int texture);
 
-    Camera *getCamera();
+    static Camera *getCamera();
 
-    void resize(glm::vec2 size) const;
+    static void resize(glm::vec2 size);
+
+    static RendererState state;
 
   private:
-    std::unique_ptr<Gl::Shader> m_shader;
-    std::unique_ptr<Gl::Vao> m_vao;
-    std::unique_ptr<Renderer2D::Camera> m_camera;
+    static std::unique_ptr<Gl::Shader> quad_shader;
 
-    std::vector<Gl::Vertex> m_vertices = {};
+    static std::unique_ptr<Gl::Vao> quad_vao;
+    static std::unique_ptr<Gl::Vao> curve_vao;
 
-    void flush();
+    static std::unique_ptr<Renderer2D::Camera> m_camera;
+
+    static std::vector<Gl::Vertex> quad_vertices;
+    static std::vector<Gl::Vertex> curve_vertices;
+
+    static void flushQuads();
+    static void flushCurves();
 };
 
 } // namespace Bess::Renderer2D

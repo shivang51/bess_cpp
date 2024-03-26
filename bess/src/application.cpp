@@ -1,9 +1,13 @@
 #include "application.h"
 #include "fwd.hpp"
 #include "gl/framebuffer.h"
+#include "renderer/renderer.h"
 #include "ui.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
+#include <unordered_map>
+
+using Bess::Renderer2D::Renderer;
 
 namespace Bess {
 
@@ -21,10 +25,9 @@ Application::Application() : m_window(800, 600, "Bess") {
     m_framebuffer = std::make_unique<Gl::FrameBuffer>(800, 500);
 
     UI::init(m_window.getGLFWHandle());
-
-    m_renderer.init();
-
     UI::state.viewportTexture = m_framebuffer->getTexture();
+
+    Renderer::init();
 
     m_window.onWindowResize(BIND_EVENT_FN_2(onWindowResize));
     m_window.onMouseWheel(BIND_EVENT_FN_2(onMouseWheel));
@@ -34,6 +37,12 @@ Application::Application() : m_window(800, 600, "Bess") {
     m_window.onRightMouse(BIND_EVENT_FN_1(onRightMouse));
     m_window.onMiddleMouse(BIND_EVENT_FN_1(onMiddleMouse));
     m_window.onMouseMove(BIND_EVENT_FN_2(onMouseMove));
+
+    auto &entities = UI::state.entities;
+
+    entities[3] = {{-0.25, -0.25}, {1, 0, 0}, 3};
+    entities[1] = {{0.25, 0.25}, {0, 1, 0}, 1};
+    entities[2] = {{0.8, 0.8}, {0, 0, 1}, 2};
 }
 
 Application::~Application() {
@@ -47,10 +56,10 @@ void Application::drawUI() {
     if (m_framebuffer->getSize() != UI::state.viewportSize) {
         m_framebuffer->resize(UI::state.viewportSize.x,
                               UI::state.viewportSize.y);
-        m_renderer.resize(UI::state.viewportSize);
+        Renderer::resize(UI::state.viewportSize);
     }
 
-    auto camera = m_renderer.getCamera();
+    auto camera = Renderer::getCamera();
 
     if (UI::state.cameraZoom != camera->getZoom()) {
         camera->setZoom(UI::state.cameraZoom);
@@ -64,29 +73,28 @@ void Application::drawUI() {
 void Application::drawScene() {
     m_framebuffer->bind();
 
-    m_renderer.begin(UI::state.hoveredId);
+    Renderer::begin();
 
     for (float y = -10.0; y <= 10.0; y += 0.25) {
         for (float x = -10.0; x <= 10.0; x += 0.25) {
             glm::vec3 color = {(x + 10.0) / 20.0, 0.2f, (y + 10.0) / 4.0};
-            m_renderer.quad({x, y}, {0.25, 0.25}, color, 0);
+            Renderer::quad({x, y}, {0.25, 0.25}, color, 0);
         }
     }
 
-    m_renderer.quad(UI::dPos, UI::dSize, {0.9f, 0.6f, 0.4f}, 1);
+    // m_renderer.quad(UI::dPos, UI::dSize, {0.9f, 0.6f, 0.4f}, 1);
 
-    m_renderer.quad({UI::dPos.x / 2, UI::dPos.y / 2},
-                    {UI::dSize.x / 2, UI::dSize.y / 2}, {1.f, 1.f, 1.f}, 2);
+    for (auto [id, entity] : UI::state.entities) {
+        Renderer::quad(entity.pos, {0.25, 0.25}, entity.color, entity.id);
+    }
 
-    m_renderer.end();
+    Renderer::end();
 
     if (isCursorInViewport()) {
-        const auto &viewportPos = UI::state.viewportPos;
-        const auto &viewportSize = UI::state.viewportSize;
-        auto x = m_mousePos.x - viewportPos.x;
-        auto y = m_mousePos.y - viewportPos.y;
-        y = viewportSize.y - y;
-        UI::state.hoveredId = m_framebuffer->readId(x, y);
+        auto viewportMousePos = getViewportMousePos();
+        viewportMousePos.y = UI::state.viewportSize.y - viewportMousePos.y;
+        UI::state.hoveredId =
+            m_framebuffer->readId(viewportMousePos.x, viewportMousePos.y);
     }
 
     m_framebuffer->unbind();
@@ -134,7 +142,8 @@ void Application::onKeyRelease(int key) { m_pressedKeys[key] = false; }
 
 void Application::onLeftMouse(bool pressed) {
     m_leftMousePressed = pressed;
-    if (!pressed)
+
+    if (!pressed || !isCursorInViewport())
         return;
 
     UI::state.selectedId = UI::state.hoveredId;
@@ -149,13 +158,19 @@ void Application::onMiddleMouse(bool pressed) {
 void Application::onMouseMove(double x, double y) {
     double dx = x - m_mousePos.x;
     double dy = y - m_mousePos.y;
+    m_mousePos = {x, y};
+
+    if (!isCursorInViewport())
+        return;
 
     if (m_middleMousePressed) {
         UI::state.cameraPos.x -= (dx * 0.002) / UI::state.cameraZoom;
         UI::state.cameraPos.y -= (dy * 0.002) / UI::state.cameraZoom;
+    } else if (m_leftMousePressed && UI::state.selectedId > 0) {
+        auto &entity = UI::state.entities[UI::state.selectedId];
+        entity.pos.x += (dx * 0.002) / UI::state.cameraZoom;
+        entity.pos.y -= (dy * 0.002) / UI::state.cameraZoom;
     }
-
-    m_mousePos = {x, y};
 }
 
 bool Application::isCursorInViewport() {
@@ -165,6 +180,14 @@ bool Application::isCursorInViewport() {
            m_mousePos.x < viewportPos.x + viewportSize.x &&
            m_mousePos.y > viewportPos.y &&
            m_mousePos.y < viewportPos.y + viewportSize.y;
+}
+
+glm::vec2 Application::getViewportMousePos() {
+    const auto &viewportPos = UI::state.viewportPos;
+    const auto &viewportSize = UI::state.viewportSize;
+    auto x = m_mousePos.x - viewportPos.x;
+    auto y = m_mousePos.y - viewportPos.y;
+    return {x, y};
 }
 
 } // namespace Bess

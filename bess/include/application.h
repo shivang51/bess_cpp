@@ -19,7 +19,6 @@ class Application {
 
   private:
     Window m_window;
-    Renderer2D::Renderer m_renderer;
 
     std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
 
@@ -28,6 +27,7 @@ class Application {
     void drawScene();
 
     bool isCursorInViewport();
+    glm::vec2 getViewportMousePos();
 
     // callbacks
   private:

@@ -6,6 +6,7 @@
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
 #include <GLFW/glfw3.h>
+#include <string>
 
 namespace Bess {
 UIState UI::state{};
@@ -51,10 +52,16 @@ void UI::shutdown() {
 
 void UI::draw() {
     begin();
-    drawSettings();
+    ProjectExplorer();
     drawViewport();
     ImGui::Begin("Properties");
-    ImGui::SliderFloat2("Pos", glm::value_ptr(dPos), -1.0f, 1.0f);
+    ImGui::Text("Hovered Id: %d", state.hoveredId);
+    if (state.selectedId > 0) {
+        auto &selectedEnt = state.entities[state.selectedId];
+        ImGui::Text("Selected Id: %d", state.selectedId);
+        ImGui::SliderFloat2("Pos", glm::value_ptr(selectedEnt.pos), -1.0f,
+                            1.0f);
+    }
     ImGui::End();
     end();
 }
@@ -63,15 +70,14 @@ void UI::setViewportTexture(GLuint64 texture) {
     state.viewportTexture = texture;
 }
 
-void UI::drawSettings() {
-    // auto mainDockspaceId = ImGui::GetID("MainDockspace");
-    // ImGui::SetNextWindowDockID(mainDockspaceId);
-    ImGui::Begin("Settings");
-    ImGui::Text("Camera Controls");
-    ImGui::SliderFloat("Zoom", &state.cameraZoom, 0.1f, 2.0f);
-
-    ImGui::SliderFloat2("Camera Pos", glm::value_ptr(state.cameraPos), -1.0f,
-                        1.0f);
+void UI::ProjectExplorer() {
+    ImGui::Begin("Project Explorer");
+    for (auto &[id, entity] : state.entities) {
+        if (ImGui::Selectable(("Gate " + std::to_string(id)).c_str(),
+                              state.selectedId == id)) {
+            state.selectedId = id;
+        }
+    }
     ImGui::End();
 }
 
@@ -102,17 +108,6 @@ void UI::drawViewport() {
 
     ImGui::End();
     ImGui::PopStyleVar();
-
-    ImGui::Begin("Debug");
-    ImGui::Text("Viewport Pos: (%.2f, %.2f)", state.viewportPos.x,
-                state.viewportPos.y);
-    ImGui::Text("Viewport Size: (%.2f, %.2f)", state.viewportSize.x,
-                state.viewportSize.y);
-
-    ImGui::Text("Hovered Id: %d", state.hoveredId);
-    ImGui::Text("Selected Id: %d", state.selectedId);
-
-    ImGui::End();
 }
 
 void UI::begin() {
@@ -156,6 +151,7 @@ void UI::end() {
         glfwMakeContextCurrent(backup_current_context);
     }
 }
+
 void UI::setDarkThemeColors() {
     auto &colors = ImGui::GetStyle().Colors;
     colors[ImGuiCol_WindowBg] = ImVec4{0.1f, 0.105f, 0.11f, 1.0f};

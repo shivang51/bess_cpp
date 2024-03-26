@@ -45,13 +45,13 @@ DEPS = $(OBJECTS)
 $(NAME): $(TARGET)
 
 $(TARGET): $(DEPS) | $(TARGET_DIR)
-	$(CXX) -o $@ -std=$(CXX_VERSION) $(OBJECTS) $(LIB_INCLUDE_DIRS) $(LIBS)
+	$(CXX) -o $@ -std=$(CXX_VERSION) -g $(OBJECTS) $(LIB_INCLUDE_DIRS) $(LIBS)
 
 %.o: %.cpp
-	$(CXX) -std=$(CXX_VERSION) $(INCLUDE) -c $< -o $@
+	$(CXX) -std=$(CXX_VERSION) -g $(INCLUDE) -c $< -o $@
 
 %.o: %.c
-	$(C) $(INCLUDE) -c $< -o $@
+	$(C) $(INCLUDE) -g -c $< -o $@
 
 $(TARGET_DIR)%a:
 	make -C ../$(subst .a,,$(@F))

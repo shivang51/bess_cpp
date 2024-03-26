@@ -8,3 +8,8 @@ out
 
 *.ini
 **/*.ini
+
+vgcore*
+
+.vscode/
+.idea/
