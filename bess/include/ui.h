@@ -8,14 +8,15 @@
 #include <unordered_map>
 
 namespace Bess {
+
+enum EntityType { none = -1, quad, curve };
+
 struct Entity {
     glm::vec2 pos = {0.f, 0.f};
     glm::vec3 color = {1.f, 1.f, 1.f};
     int id = -1;
 
-    Entity() = default;
-    Entity(glm::vec2 pos, glm::vec3 color, int id)
-        : pos(pos), color(color), id(id) {}
+    EntityType type = EntityType::none;
 };
 
 struct UIState {

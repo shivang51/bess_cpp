@@ -40,9 +40,11 @@ Application::Application() : m_window(800, 600, "Bess") {
 
     auto &entities = UI::state.entities;
 
-    entities[3] = {{-0.25, -0.25}, {1, 0, 0}, 3};
-    entities[1] = {{0.25, 0.25}, {0, 1, 0}, 1};
-    entities[2] = {{0.8, 0.8}, {0, 0, 1}, 2};
+    entities[3] = {{-0.25, -0.25}, {1, 0, 0}, 3, EntityType::quad};
+    entities[1] = {{0.25, 0.25}, {0, 1, 0}, 1, EntityType::quad};
+    entities[2] = {{0.8, 0.8}, {0, 0, 1}, 2, EntityType::quad};
+    entities[7] = {{0.f, 0.f}, {0.7f, 0.5f, 0.5f}, 7, EntityType::curve};
+    entities[8] = {{0.f, 0.f}, {0.7f, 0.5f, 0.5f}, 8, EntityType::curve};
 }
 
 Application::~Application() {
@@ -82,10 +84,27 @@ void Application::drawScene() {
         }
     }
 
-    // m_renderer.quad(UI::dPos, UI::dSize, {0.9f, 0.6f, 0.4f}, 1);
+    bool rendered = false;
 
     for (auto [id, entity] : UI::state.entities) {
-        Renderer::quad(entity.pos, {0.25, 0.25}, entity.color, entity.id);
+        switch (entity.type) {
+        case quad:
+            if (!rendered) {
+                Renderer::quad(entity.pos, {0.25, 0.25}, entity.color,
+                               entity.id);
+            } else {
+                auto pos = entity.pos;
+                pos.y += 0.25;
+
+                Renderer::quad(pos, {0.25, 0.5}, entity.color, entity.id);
+            }
+            break;
+        case curve:
+            Renderer::curve(entity.pos, UI::dSize, entity.color, entity.id);
+            break;
+        default:
+            break;
+        }
     }
 
     Renderer::end();

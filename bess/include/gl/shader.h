@@ -10,6 +10,9 @@ class Shader {
   public:
     Shader() = default;
     Shader(const std::string &vertexPath, const std::string &fragmentPath);
+    Shader(const std::string &vertexPath, const std::string &fragmentPath,
+           const std::string &tessalationPath,
+           const std::string &evaluationPath);
     ~Shader();
 
     void bind() const;
@@ -27,6 +30,10 @@ class Shader {
     GLuint compileShader(const std::string &source, GLenum type);
     GLuint createProgram(const std::string &vertexPath,
                          const std::string &fragmentPath);
+    GLuint createProgram(const std::string &vertexPath,
+                         const std::string &fragmentPath,
+                         const std::string &tessalationPath,
+                         const std::string &evaluationPath);
     std::string readFile(const std::string &path);
 };
 } // namespace Bess::Gl

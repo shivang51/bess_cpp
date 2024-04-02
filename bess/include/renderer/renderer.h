@@ -39,6 +39,7 @@ class Renderer {
 
   private:
     static std::unique_ptr<Gl::Shader> quad_shader;
+    static std::unique_ptr<Gl::Shader> curve_shader;
 
     static std::unique_ptr<Gl::Vao> quad_vao;
     static std::unique_ptr<Gl::Vao> curve_vao;

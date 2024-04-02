@@ -9,12 +9,62 @@ Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath) {
     m_id = createProgram(vertexPath, fragmentPath);
 }
 
+Shader::Shader(const std::string &vertexPath, const std::string &fragmentPath,
+               const std::string &tessalationPath,
+               const std::string &evaluationPath) {
+    m_id = createProgram(vertexPath, fragmentPath, tessalationPath,
+                         evaluationPath);
+}
+
 Shader::~Shader() { glDeleteProgram(m_id); }
 
 void Shader::bind() const { GL_CHECK(glUseProgram(m_id)); }
 
 void Shader::unbind() const { glUseProgram(0); }
 
+GLuint Shader::createProgram(const std::string &vertexPath,
+                             const std::string &fragmentPath,
+                             const std::string &tessalationPath,
+                             const std::string &evaluationPath) {
+
+    auto vertexShader = readFile(vertexPath);
+    auto fragmentShader = readFile(fragmentPath);
+    auto tessalationShader = readFile(tessalationPath);
+    auto evaluationShader = readFile(evaluationPath);
+
+    auto vertexShaderId = compileShader(vertexShader.c_str(), GL_VERTEX_SHADER);
+    auto fragmentShaderId =
+        compileShader(fragmentShader.c_str(), GL_FRAGMENT_SHADER);
+    auto tessalationShaderId =
+        compileShader(tessalationShader.c_str(), GL_TESS_CONTROL_SHADER);
+    auto evaluationShaderId =
+        compileShader(evaluationShader.c_str(), GL_TESS_EVALUATION_SHADER);
+
+    auto shaderProgram = glCreateProgram();
+
+    glAttachShader(shaderProgram, vertexShaderId);
+    glAttachShader(shaderProgram, tessalationShaderId);
+    glAttachShader(shaderProgram, evaluationShaderId);
+    glAttachShader(shaderProgram, fragmentShaderId);
+
+    glLinkProgram(shaderProgram);
+
+    int success;
+    char infoLog[512];
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+        std::cerr << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n"
+                  << infoLog << std::endl;
+    }
+
+    glDeleteShader(vertexShaderId);
+    glDeleteShader(fragmentShaderId);
+    glDeleteShader(tessalationShaderId);
+    glDeleteShader(evaluationShaderId);
+
+    return shaderProgram;
+}
 GLuint Shader::createProgram(const std::string &vertexPath,
                              const std::string &fragmentPath) {
 

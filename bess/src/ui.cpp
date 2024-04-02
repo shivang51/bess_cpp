@@ -61,6 +61,22 @@ void UI::draw() {
         ImGui::Text("Selected Id: %d", state.selectedId);
         ImGui::SliderFloat2("Pos", glm::value_ptr(selectedEnt.pos), -1.0f,
                             1.0f);
+        if (state.selectedId > 0 && state.selectedId != 7) {
+            auto &curve = state.entities[7];
+            auto &ent = state.entities[3];
+            auto &ent1 = state.entities[1];
+
+            glm::vec2 start;
+            start.x = ent.pos.x + 0.25;
+            start.y = ent.pos.y;
+
+            glm::vec2 end;
+            end.x = ent1.pos.x;
+            end.y = ent1.pos.y - 0.25;
+
+            curve.pos = start;
+            dSize = end;
+        }
     }
     ImGui::End();
     end();

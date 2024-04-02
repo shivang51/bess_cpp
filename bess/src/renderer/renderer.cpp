@@ -6,6 +6,8 @@
 #include "ui.h"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <iostream>
+#include <ostream>
 
 namespace Bess::Renderer2D {
 
@@ -15,6 +17,7 @@ const size_t MAX_CURVES = 250;
 RendererState Renderer::state;
 
 std::unique_ptr<Gl::Shader> Renderer::quad_shader;
+std::unique_ptr<Gl::Shader> Renderer::curve_shader;
 
 std::unique_ptr<Gl::Vao> Renderer::quad_vao;
 
@@ -33,6 +36,11 @@ void Renderer::init() {
 
     quad_shader = std::make_unique<Gl::Shader>(
         "bess/src/shaders/first_vert.glsl", "bess/src/shaders/first_frag.glsl");
+
+    curve_shader = std::make_unique<Gl::Shader>(
+        "bess/src/shaders/curve_vert.glsl", "bess/src/shaders/curve_frag.glsl",
+        "bess/src/shaders/curve_tess.glsl",
+        "bess/src/shaders/curve_tess_eval.glsl");
 
     quad_vao = std::make_unique<Gl::Vao>(MAX_QUADS * 4, MAX_QUADS * 6);
     curve_vao = std::make_unique<Gl::Vao>(MAX_CURVES * 4, MAX_CURVES * 6);
@@ -79,20 +87,38 @@ void Renderer::curve(const glm::vec2 &start, const glm::vec2 &end,
 
     std::vector<Gl::Vertex> vertices(4);
 
+    double dx = end.x - start.x;
+
+    dx *= 0.5;
+
+    // if (std::abs(dx) < 0.25)
+    //     dx = (0.5 - std::abs(dx)) * (dx / std::abs(dx));
+    //
+    double dy = end.y - start.y;
+
+    double offsetX = dx;
+    double offsetY = 0.0;
+
+    // if (dy != 0.5) {
+    //     offsetY = 0.5 - dy;
+    // }
+
+    offsetY /= 2;
+
     vertices[0].position = {start.x, start.y, 0.0f};
-    vertices[1].position = {start.x, end.y, 0.0f};
-    vertices[2].position = {end.x, end.y, 0.0f};
-    vertices[3].position = {end.x, start.y, 0.0f};
+    vertices[1].position = {end.x - offsetX, end.y + offsetY, 0.0f};
+    vertices[2].position = {start.x + offsetX, start.y - offsetY, 0.0f};
+    vertices[3].position = {end.x, end.y, 0.0f};
 
     vertices[0].color = color;
     vertices[1].color = color;
     vertices[2].color = color;
     vertices[3].color = color;
 
-    vertices[1].texCoord = {0.0f, 0.0f};
     vertices[0].texCoord = {0.0f, 1.0f};
-    vertices[3].texCoord = {1.0f, 1.0f};
+    vertices[1].texCoord = {0.0f, 0.0f};
     vertices[2].texCoord = {1.0f, 0.0f};
+    vertices[3].texCoord = {1.0f, 1.0f};
 
     vertices[0].texIndex = texture;
     vertices[1].texIndex = texture;
@@ -131,25 +157,29 @@ void Renderer::flushCurves() {
 
     auto selId = UI::state.selectedId;
 
-    quad_shader->bind();
-    quad_shader->setUniformMat4("u_mvp", m_camera->getTransform());
+    curve_shader->bind();
+    curve_shader->setUniformMat4("u_mvp", m_camera->getTransform());
 
     if (selId != -1) {
-        quad_shader->setUniform1i("u_SelectedObjId", selId);
+        curve_shader->setUniform1i("u_SelectedObjId", selId);
     }
 
     curve_vao->setVertices(curve_vertices);
-
-    GL_CHECK(glDrawElements(GL_TRIANGLES, (curve_vertices.size() / 4) * 6,
-                            GL_UNSIGNED_INT, nullptr));
+    glLineWidth(4.);
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
+    glDrawArrays(GL_PATCHES, 0, curve_vertices.size());
+    glLineWidth(1.);
     curve_vertices.clear();
 
     curve_vao->unbind();
-    quad_shader->unbind();
+    curve_shader->unbind();
 }
 
 void Renderer::begin() {}
 
-void Renderer::end() { flushQuads(); }
+void Renderer::end() {
+    flushQuads();
+    flushCurves();
+}
 
 } // namespace Bess::Renderer2D
