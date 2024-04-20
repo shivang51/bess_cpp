@@ -23,6 +23,7 @@ namespace Bess {
 Application::Application() : m_window(800, 600, "Bess") {
 
     m_framebuffer = std::make_unique<Gl::FrameBuffer>(800, 500);
+    m_camera = std::make_shared<Renderer2D::Camera>();
 
     UI::init(m_window.getGLFWHandle());
     UI::state.viewportTexture = m_framebuffer->getTexture();
@@ -43,8 +44,8 @@ Application::Application() : m_window(800, 600, "Bess") {
     entities[3] = {{-0.25, -0.25}, {1, 0, 0}, 3, EntityType::quad};
     entities[1] = {{0.25, 0.25}, {0, 1, 0}, 1, EntityType::quad};
     entities[2] = {{0.8, 0.8}, {0, 0, 1}, 2, EntityType::quad};
-    entities[7] = {{0.f, 0.f}, {0.7f, 0.5f, 0.5f}, 7, EntityType::curve};
-    entities[8] = {{0.f, 0.f}, {0.7f, 0.5f, 0.5f}, 8, EntityType::curve};
+    entities[7] = {{0.f, 0.f}, {.0f, 1.f, 0.f}, 7, EntityType::curve};
+    entities[8] = {{0.f, 0.f}, {.0f, 1.f, 0.f}, 8, EntityType::curve};
 }
 
 Application::~Application() {
@@ -58,54 +59,48 @@ void Application::drawUI() {
     if (m_framebuffer->getSize() != UI::state.viewportSize) {
         m_framebuffer->resize(UI::state.viewportSize.x,
                               UI::state.viewportSize.y);
-        Renderer::resize(UI::state.viewportSize);
+        m_camera->resize(UI::state.viewportSize.x, UI::state.viewportSize.y);
     }
 
-    auto camera = Renderer::getCamera();
-
-    if (UI::state.cameraZoom != camera->getZoom()) {
-        camera->setZoom(UI::state.cameraZoom);
+    if (UI::state.cameraZoom != m_camera->getZoom()) {
+        m_camera->setZoom(UI::state.cameraZoom);
     }
 
-    if (UI::state.cameraPos != camera->getPos()) {
-        camera->setPos(UI::state.cameraPos);
+    if (UI::state.cameraPos != m_camera->getPos()) {
+        m_camera->setPos(UI::state.cameraPos);
     }
 }
 
 void Application::drawScene() {
     m_framebuffer->bind();
 
-    Renderer::begin();
+    Renderer::begin(m_camera);
 
-    for (float y = -10.0; y <= 10.0; y += 0.25) {
-        for (float x = -10.0; x <= 10.0; x += 0.25) {
-            glm::vec3 color = {(x + 10.0) / 20.0, 0.2f, (y + 10.0) / 4.0};
-            Renderer::quad({x, y}, {0.25, 0.25}, color, 0);
-        }
-    }
-
-    bool rendered = false;
+    bool rendered = true;
 
     for (auto [id, entity] : UI::state.entities) {
         switch (entity.type) {
         case quad:
-            if (!rendered) {
-                Renderer::quad(entity.pos, {0.25, 0.25}, entity.color,
-                               entity.id);
-            } else {
-                auto pos = entity.pos;
-                pos.y += 0.25;
-
-                Renderer::quad(pos, {0.25, 0.5}, entity.color, entity.id);
-            }
+            Renderer::quad(entity.pos, {0.25, 0.25}, entity.color, entity.id,
+                           entity.angle);
             break;
         case curve:
-            Renderer::curve(entity.pos, UI::dSize, entity.color, entity.id);
+            if (!rendered) {
+                auto pos = UI::state.entities[3].pos;
+                Renderer::curve({pos.x + 0.5, pos.y}, UI::dSize, entity.color,
+                                entity.id);
+                rendered = true;
+            } else {
+                Renderer::curve(entity.pos, UI::dSize, entity.color, entity.id);
+            }
             break;
         default:
             break;
         }
     }
+
+    Renderer::circle({0., 0.}, 0.1, {1., 1., 1.}, 104);
+    Renderer::circle({0., 0.}, 0.05, {.1f, 0.1f, .1f}, 104);
 
     Renderer::end();
 
@@ -121,7 +116,7 @@ void Application::drawScene() {
 
 void Application::run() {
     while (!m_window.isClosed()) {
-        m_window.pollEvents();
+        m_window.waitEvents();
 
         drawUI();
         drawScene();
@@ -147,8 +142,8 @@ void Application::onMouseWheel(double x, double y) {
         UI::state.cameraZoom += delta;
         if (UI::state.cameraZoom < 0.1f) {
             UI::state.cameraZoom = 0.1f;
-        } else if (UI::state.cameraZoom > 2.0f) {
-            UI::state.cameraZoom = 2.f;
+        } else if (UI::state.cameraZoom > 6.0f) {
+            UI::state.cameraZoom = 6.f;
         }
     } else {
         UI::state.cameraPos.y -= delta;

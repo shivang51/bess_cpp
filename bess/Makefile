@@ -9,10 +9,6 @@ SRC_DIR = src
 
 TARGET_DIR = ../out/
 
-ifeq ($(OS), Windows_NT)
-	TARGET_DIR = ..\out
-endif
-
 SRC_FILES = $(wildcard $(SRC_DIR)/*/*.cpp)
 SRC_FILES += $(wildcard $(SRC_DIR)/*/*/*.cpp)
 SRC_FILES += $(wildcard $(SRC_DIR)/*.cpp)
@@ -33,8 +29,8 @@ LIBS = -lglfw -lGL
 LIB_INCLUDE_DIRS = -L../out/
 
 ifeq ($(OS),Windows_NT)
+	TARGET_DIR = ..\out
 	TARGET = $(TARGET_DIR)\$(NAME).exe
-
 	INCLUDE += -I../external/glfw/include
 	LIB_INCLUDE_DIRS += -L../external/glfw/lib-mingw-w64
 	LIBS = -lopengl32 -lglfw3 -lgdi32

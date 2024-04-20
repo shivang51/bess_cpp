@@ -2,57 +2,202 @@
 #include "fwd.hpp"
 #include "gl/gl_wrapper.h"
 #include "gl/vertex.h"
+#include "glm.hpp"
 #include "renderer/camera.h"
 #include "ui.h"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
+#include <ext/matrix_transform.hpp>
 #include <iostream>
 #include <ostream>
 
 namespace Bess::Renderer2D {
 
-const size_t MAX_QUADS = 250;
-const size_t MAX_CURVES = 250;
+std::vector<PrimitiveType> Renderer::m_AvailablePrimitives;
 
-RendererState Renderer::state;
+std::unordered_map<PrimitiveType, std::unique_ptr<Gl::Shader>>
+    Renderer::m_shaders;
+std::unordered_map<PrimitiveType, std::unique_ptr<Gl::Vao>> Renderer::m_vaos;
+std::unordered_map<PrimitiveType, std::vector<Gl::Vertex>> Renderer::m_vertices;
 
-std::unique_ptr<Gl::Shader> Renderer::quad_shader;
-std::unique_ptr<Gl::Shader> Renderer::curve_shader;
+std::unordered_map<PrimitiveType, size_t> Renderer::m_maxRenderCount;
 
-std::unique_ptr<Gl::Vao> Renderer::quad_vao;
+std::shared_ptr<Renderer2D::Camera> Renderer::m_camera;
 
-std::unique_ptr<Gl::Vao> Renderer::curve_vao;
-
-std::unique_ptr<Camera> Renderer::m_camera;
-
-std::vector<Gl::Vertex> Renderer::quad_vertices;
-
-std::vector<Gl::Vertex> Renderer::curve_vertices;
+std::vector<glm::vec4> Renderer::m_QuadVertices;
 
 void Renderer::init() {
-    state = {};
-    quad_vertices = {};
-    curve_vertices = {};
 
-    quad_shader = std::make_unique<Gl::Shader>(
-        "bess/src/shaders/first_vert.glsl", "bess/src/shaders/first_frag.glsl");
+    m_AvailablePrimitives = {PrimitiveType::quad, PrimitiveType::curve,
+                             PrimitiveType::circle};
+    m_maxRenderCount[PrimitiveType::quad] = 250;
+    m_maxRenderCount[PrimitiveType::curve] = 250;
+    m_maxRenderCount[PrimitiveType::circle] = 250;
 
-    curve_shader = std::make_unique<Gl::Shader>(
-        "bess/src/shaders/curve_vert.glsl", "bess/src/shaders/curve_frag.glsl",
-        "bess/src/shaders/curve_tess.glsl",
-        "bess/src/shaders/curve_tess_eval.glsl");
+    std::string vertexShader = "", fragmentShader = "";
 
-    quad_vao = std::make_unique<Gl::Vao>(MAX_QUADS * 4, MAX_QUADS * 6);
-    curve_vao = std::make_unique<Gl::Vao>(MAX_CURVES * 4, MAX_CURVES * 6);
+    for (auto primitive : m_AvailablePrimitives) {
+        switch (primitive) {
+        case PrimitiveType::quad:
+            vertexShader = "assets/shaders/vert.glsl";
+            fragmentShader = "assets/shaders/quad_frag.glsl";
+            break;
+        case PrimitiveType::curve:
+            vertexShader = "assets/shaders/vert.glsl";
+            fragmentShader = "assets/shaders/curve_frag.glsl";
+            break;
+        case PrimitiveType::circle:
+            vertexShader = "assets/shaders/vert.glsl";
+            fragmentShader = "assets/shaders/circle_frag.glsl";
+            break;
+        }
 
-    m_camera = std::make_unique<Camera>();
+        if (vertexShader.empty() || fragmentShader.empty()) {
+            std::cerr << "[-] Primitive " << (int)primitive
+                      << "is not available" << std::endl;
+            return;
+        }
+
+        auto max_render_count = m_maxRenderCount[primitive];
+
+        m_shaders[primitive] =
+            std::make_unique<Gl::Shader>(vertexShader, fragmentShader);
+        m_vaos[primitive] = std::make_unique<Gl::Vao>(max_render_count * 4,
+                                                      max_render_count * 6);
+        m_vertices[primitive] = {};
+
+        vertexShader.clear();
+        fragmentShader.clear();
+    }
+
+    m_QuadVertices = {
+        {-0.5f, 0.5f, 0.f, 1.f},
+        {-0.5f, -0.5f, 0.f, 1.f},
+        {0.5f, -0.5f, 0.f, 1.f},
+        {0.5f, 0.5f, 0.f, 1.f},
+    };
 }
 
 void Renderer::quad(const glm::vec2 &pos, const glm::vec2 &size,
-                    const glm::vec3 &color, const int texture) {
-    if (quad_vertices.size() >= (MAX_QUADS - 1) * 4) {
-        flushQuads();
+                    const glm::vec3 &color, const int id) {
+    std::vector<Gl::Vertex> vertices(4);
+
+    vertices[0].position = {pos.x, pos.y, 0.0f};
+    vertices[1].position = {pos.x, pos.y - size.y, 0.0f};
+    vertices[2].position = {pos.x + size.x, pos.y - size.y, 0.0f};
+    vertices[3].position = {pos.x + size.x, pos.y, 0.0f};
+
+    vertices[1].texCoord = {0.0f, 0.0f};
+    vertices[0].texCoord = {0.0f, 1.0f};
+    vertices[3].texCoord = {1.0f, 1.0f};
+    vertices[2].texCoord = {1.0f, 0.0f};
+
+    for (auto &vertex : vertices) {
+        vertex.texIndex = id;
+        vertex.color = color;
     }
+
+    addVertices(PrimitiveType::quad, vertices);
+}
+
+void Renderer::quad(const glm::vec2 &pos, const glm::vec2 &size,
+                    const glm::vec3 &color, const int id, const float angle) {
+    std::vector<Gl::Vertex> vertices(4);
+
+    auto transform = glm::translate(glm::mat4(1.0f), glm::vec3(pos, 0.f));
+    transform = glm::rotate(transform, glm::radians(angle), {0.f, 0.f, 1.f});
+    transform = glm::scale(transform, {size.x, size.y, 1.f});
+
+    for (int i = 0; i < 4; i++) {
+        auto &vertex = vertices[i];
+        vertex.position = transform * m_QuadVertices[i];
+        vertex.texIndex = id;
+        vertex.color = color;
+    }
+
+    vertices[0].texCoord = {0.0f, 1.0f};
+    vertices[1].texCoord = {0.0f, 0.0f};
+    vertices[2].texCoord = {1.0f, 0.0f};
+    vertices[3].texCoord = {1.0f, 1.0f};
+
+    addVertices(PrimitiveType::quad, vertices);
+}
+
+glm::vec2 bernstine(const glm::vec2 &p0, const glm::vec2 &p1,
+                    const glm::vec2 &p2, const glm::vec2 &p3, const float t) {
+    auto t_ = 1 - t;
+
+    glm::vec2 B0 = (float)std::pow(t_, 3) * p0;
+    glm::vec2 B1 = (float)(3 * t * std::pow(t_, 2)) * p1;
+    glm::vec2 B2 = (float)(3 * t * t * std::pow(t_, 1)) * p2;
+    glm::vec2 B3 = (float)(t * t * t) * p3;
+
+    return B0 + B1 + B2 + B3;
+}
+
+glm::vec2 Renderer::createCurveVertices(const glm::vec2 &start,
+                                        const glm::vec2 &end,
+                                        const glm::vec3 &color, const int id) {
+    auto dx = end.x - start.x;
+    auto dy = end.y - start.y;
+    auto angle = std::atan(dy / dx);
+    float dis = std::sqrt((dx * dx) + (dy * dy));
+
+    float sizeX = std::max(dis, 0.01f);
+    sizeX = dis;
+
+    glm::vec3 pos = {start.x, start.y - 0.005f, 0.f};
+    auto transform = glm::translate(glm::mat4(1.0f), pos);
+    transform = glm::rotate(transform, angle, {0.f, 0.f, 1.f});
+    transform = glm::scale(transform, {sizeX, 0.01, 1.f});
+
+    glm::vec3 p;
+
+    std::vector<Gl::Vertex> vertices(4);
+    for (int i = 0; i < 4; i++) {
+        auto &vertex = vertices[i];
+        vertex.position = transform * m_QuadVertices[i];
+        vertex.texIndex = id;
+        vertex.color = color;
+
+        if (i == 3)
+            p = vertex.position;
+    }
+
+    vertices[0].texCoord = {0.0f, 1.0f};
+    vertices[1].texCoord = {0.0f, 0.0f};
+    vertices[2].texCoord = {1.0f, 0.0f};
+    vertices[3].texCoord = {1.0f, 1.0f};
+
+    addVertices(PrimitiveType::curve, vertices);
+    return p;
+}
+
+int calculateSegments(const glm::vec2 &p1, const glm::vec2 &p2) {
+    return glm::distance(p1, p2) / 0.01;
+}
+
+void Renderer::curve(const glm::vec2 &start, const glm::vec2 &end,
+                     const glm::vec3 &color, const int id) {
+    const int segments = calculateSegments(start, end);
+    double dx = end.x - start.x;
+    double offsetX = dx * 0.5;
+    glm::vec2 cp2 = {end.x - offsetX, end.y};
+    glm::vec2 cp1 = {start.x + offsetX, start.y};
+    std::vector<Gl::Vertex> verticies(4);
+    auto prev = start;
+    for (int i = 1; i <= segments; i++) {
+        glm::vec2 p =
+            bernstine(start, cp1, cp2, end, (float)i / (float)segments);
+        createCurveVertices(prev, p, color, id);
+        prev = p;
+    }
+}
+
+void Renderer::circle(const glm::vec2 &center, const float radius,
+                      const glm::vec3 &color, const int id) {
+    glm::vec2 pos = {center.x - radius, center.y + radius};
+    glm::vec2 size = {radius * 2, radius * 2};
 
     std::vector<Gl::Vertex> vertices(4);
 
@@ -61,125 +206,65 @@ void Renderer::quad(const glm::vec2 &pos, const glm::vec2 &size,
     vertices[2].position = {pos.x + size.x, pos.y - size.y, 0.0f};
     vertices[3].position = {pos.x + size.x, pos.y, 0.0f};
 
-    vertices[0].color = color;
-    vertices[1].color = color;
-    vertices[2].color = color;
-    vertices[3].color = color;
-
     vertices[1].texCoord = {0.0f, 0.0f};
     vertices[0].texCoord = {0.0f, 1.0f};
     vertices[3].texCoord = {1.0f, 1.0f};
     vertices[2].texCoord = {1.0f, 0.0f};
 
-    vertices[0].texIndex = texture;
-    vertices[1].texIndex = texture;
-    vertices[2].texIndex = texture;
-    vertices[3].texIndex = texture;
-
-    quad_vertices.insert(quad_vertices.end(), vertices.begin(), vertices.end());
-}
-
-void Renderer::curve(const glm::vec2 &start, const glm::vec2 &end,
-                     const glm::vec3 &color, const int texture) {
-    if (curve_vertices.size() >= (MAX_CURVES - 1) * 4) {
-        flushCurves();
+    for (auto &vertex : vertices) {
+        vertex.texIndex = id;
+        vertex.color = color;
     }
 
-    std::vector<Gl::Vertex> vertices(4);
-
-    double dx = end.x - start.x;
-
-    dx *= 0.5;
-
-    // if (std::abs(dx) < 0.25)
-    //     dx = (0.5 - std::abs(dx)) * (dx / std::abs(dx));
-    //
-    double dy = end.y - start.y;
-
-    double offsetX = dx;
-    double offsetY = 0.0;
-
-    // if (dy != 0.5) {
-    //     offsetY = 0.5 - dy;
-    // }
-
-    offsetY /= 2;
-
-    vertices[0].position = {start.x, start.y, 0.0f};
-    vertices[1].position = {end.x - offsetX, end.y + offsetY, 0.0f};
-    vertices[2].position = {start.x + offsetX, start.y - offsetY, 0.0f};
-    vertices[3].position = {end.x, end.y, 0.0f};
-
-    vertices[0].color = color;
-    vertices[1].color = color;
-    vertices[2].color = color;
-    vertices[3].color = color;
-
-    vertices[0].texCoord = {0.0f, 1.0f};
-    vertices[1].texCoord = {0.0f, 0.0f};
-    vertices[2].texCoord = {1.0f, 0.0f};
-    vertices[3].texCoord = {1.0f, 1.0f};
-
-    vertices[0].texIndex = texture;
-    vertices[1].texIndex = texture;
-    vertices[2].texIndex = texture;
-    vertices[3].texIndex = texture;
-
-    curve_vertices.insert(curve_vertices.end(), vertices.begin(),
-                          vertices.end());
+    addVertices(PrimitiveType::circle, vertices);
 }
 
-void Renderer::resize(glm::vec2 size) { m_camera->resize(size.x, size.y); }
+void Renderer::addVertices(PrimitiveType type,
+                           const std::vector<Gl::Vertex> &vertices) {
+    auto &primitive_vertices = m_vertices[type];
+    auto max_render_count = m_maxRenderCount[type];
 
-Camera *Renderer::getCamera() { return m_camera.get(); }
+    if (primitive_vertices.size() >= (max_render_count - 1) * 4) {
+        flush(type);
+    }
 
-void Renderer::flushQuads() {
-    quad_vao->bind();
-    quad_shader->bind();
-    quad_shader->setUniformMat4("u_mvp", m_camera->getTransform());
+    primitive_vertices.insert(primitive_vertices.end(), vertices.begin(),
+                              vertices.end());
+}
+
+void Renderer::flush(PrimitiveType type) {
+    auto &vertices = m_vertices[type];
+    auto &vao = m_vaos[type];
+    auto &shader = m_shaders[type];
+
+    vao->bind();
+    shader->bind();
+    shader->setUniformMat4("u_mvp", m_camera->getTransform());
 
     auto selId = UI::state.selectedId;
+    auto hoveredId = UI::state.hoveredId;
 
     if (selId != -1) {
-        quad_shader->setUniform1i("u_SelectedObjId", selId);
+        shader->setUniform1i("u_SelectedObjId",
+                             type == PrimitiveType::circle ? hoveredId : selId);
     }
 
-    quad_vao->setVertices(quad_vertices);
-    GL_CHECK(glDrawElements(GL_TRIANGLES, (quad_vertices.size() / 4) * 6,
+    vao->setVertices(vertices);
+    GL_CHECK(glDrawElements(GL_TRIANGLES, (vertices.size() / 4) * 6,
                             GL_UNSIGNED_INT, nullptr));
-    quad_vertices.clear();
-    quad_vao->unbind();
-    quad_shader->unbind();
+    vertices.clear();
+    vao->unbind();
+    shader->unbind();
 }
 
-void Renderer::flushCurves() {
-    curve_vao->bind();
-
-    auto selId = UI::state.selectedId;
-
-    curve_shader->bind();
-    curve_shader->setUniformMat4("u_mvp", m_camera->getTransform());
-
-    if (selId != -1) {
-        curve_shader->setUniform1i("u_SelectedObjId", selId);
-    }
-
-    curve_vao->setVertices(curve_vertices);
-    glLineWidth(4.);
-    glPatchParameteri(GL_PATCH_VERTICES, 4);
-    glDrawArrays(GL_PATCHES, 0, curve_vertices.size());
-    glLineWidth(1.);
-    curve_vertices.clear();
-
-    curve_vao->unbind();
-    curve_shader->unbind();
+void Renderer::begin(std::shared_ptr<Renderer2D::Camera> camera) {
+    m_camera = camera;
 }
-
-void Renderer::begin() {}
 
 void Renderer::end() {
-    flushQuads();
-    flushCurves();
+    for (auto primitive : m_AvailablePrimitives) {
+        flush(primitive);
+    }
 }
 
 } // namespace Bess::Renderer2D

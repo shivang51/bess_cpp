@@ -26,7 +26,6 @@ class FrameBuffer {
   private:
     GLuint m_fbo;
     GLuint m_textures[2];
-    GLuint m_depth_texture;
     GLuint m_rbo;
 
     float m_width;

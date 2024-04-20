@@ -6,14 +6,12 @@
 #include "gl/vertex.h"
 #include "renderer/camera.h"
 #include <memory>
+#include <unordered_map>
 
 #include "camera.h"
 
 namespace Bess::Renderer2D {
-
-struct RendererState {
-    Camera *camera = nullptr;
-};
+enum class PrimitiveType { quad, curve, circle };
 
 class Renderer {
   public:
@@ -21,36 +19,46 @@ class Renderer {
 
     static void init();
 
-    static void begin();
-
+    static void begin(std::shared_ptr<Renderer2D::Camera> camera);
     static void end();
 
     static void quad(const glm::vec2 &pos, const glm::vec2 &size,
-                     const glm::vec3 &color, const int texture);
+                     const glm::vec3 &color, const int id);
+
+    static void quad(const glm::vec2 &pos, const glm::vec2 &size,
+                     const glm::vec3 &color, const int id, const float angle);
 
     static void curve(const glm::vec2 &start, const glm::vec2 &end,
-                      const glm::vec3 &color, const int texture);
+                      const glm::vec3 &color, const int id);
 
-    static Camera *getCamera();
-
-    static void resize(glm::vec2 size);
-
-    static RendererState state;
+    static void circle(const glm::vec2 &center, const float radius,
+                       const glm::vec3 &color, const int id);
 
   private:
-    static std::unique_ptr<Gl::Shader> quad_shader;
-    static std::unique_ptr<Gl::Shader> curve_shader;
+    static glm::vec2 createCurveVertices(const glm::vec2 &start,
+                                         const glm::vec2 &end,
+                                         const glm::vec3 &color, const int id);
 
-    static std::unique_ptr<Gl::Vao> quad_vao;
-    static std::unique_ptr<Gl::Vao> curve_vao;
+  private:
+    static void addVertices(PrimitiveType type,
+                            const std::vector<Gl::Vertex> &vertices);
 
-    static std::unique_ptr<Renderer2D::Camera> m_camera;
+  private:
+    static std::unordered_map<PrimitiveType, std::unique_ptr<Gl::Shader>>
+        m_shaders;
+    static std::unordered_map<PrimitiveType, std::unique_ptr<Gl::Vao>> m_vaos;
+    static std::unordered_map<PrimitiveType, std::vector<Gl::Vertex>>
+        m_vertices;
 
-    static std::vector<Gl::Vertex> quad_vertices;
-    static std::vector<Gl::Vertex> curve_vertices;
+    static std::unordered_map<PrimitiveType, size_t> m_maxRenderCount;
 
-    static void flushQuads();
-    static void flushCurves();
+    static std::shared_ptr<Renderer2D::Camera> m_camera;
+
+    static std::vector<PrimitiveType> m_AvailablePrimitives;
+
+    static void flush(PrimitiveType type);
+
+    static std::vector<glm::vec4> m_QuadVertices;
 };
 
 } // namespace Bess::Renderer2D

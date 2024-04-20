@@ -6,8 +6,10 @@
 #include "window.h"
 #include <memory>
 
-namespace Bess {
-class Application {
+namespace Bess
+{
+  class Application
+  {
   public:
     Application();
     ~Application();
@@ -21,6 +23,7 @@ class Application {
     Window m_window;
 
     std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
+    std::shared_ptr<Renderer2D::Camera> m_camera;
 
   private:
     void drawUI();
@@ -47,5 +50,5 @@ class Application {
     bool m_middleMousePressed = false;
 
     glm::vec2 m_mousePos = {0, 0};
-};
+  };
 } // namespace Bess

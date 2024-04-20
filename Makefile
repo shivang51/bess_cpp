@@ -6,8 +6,6 @@ all: $(SUBDIRS)
 $(SUBDIRS):
 	$(MAKE) -C $@
 
-
-
 clean:
 ifeq ($(OS),Windows_NT)
 	del /s /q *.exe
@@ -18,7 +16,7 @@ else
 	rm out -rf
 endif
 
-run:
+run: $(SUBDIRS)
 	./out/$(APP_NAME)
 
 .PHONY: all $(SUBDIRS)

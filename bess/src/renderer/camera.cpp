@@ -44,6 +44,7 @@ float Camera::getZoom() const { return m_zoom; }
 
 void Camera::resize(float width, float height) {
     m_aspectRatio = width / height;
+    m_zoom = m_zoom / m_aspectRatio;
     recalculateOrtho();
 }
 
