@@ -14,7 +14,7 @@ void main() {
     int id = u_SelectedObjId;
 
     vec2 uv = v_TexCoord - 0.5;
-    float thickness = 0.01;
+    float thickness = 0.1;
     float r = 0.5f;
 
     vec3 col = v_FragColor;

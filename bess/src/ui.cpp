@@ -56,27 +56,12 @@ void UI::draw() {
     drawViewport();
     ImGui::Begin("Properties");
     ImGui::Text("Hovered Id: %d", state.hoveredId);
-    if (state.selectedId > 0) {
-        auto &selectedEnt = state.entities[state.selectedId];
+    if (state.selectedId > 0 &&
+        state.components.find(state.selectedId) != state.components.end()) {
+        auto &selectedEnt = state.components[state.selectedId];
         ImGui::Text("Selected Id: %d", state.selectedId);
-        ImGui::SliderFloat2("Pos", glm::value_ptr(selectedEnt.pos), -1.0f,
-                            1.0f);
-        if (state.selectedId > 0 && state.selectedId != 7) {
-            auto &curve = state.entities[7];
-            auto &ent = state.entities[3];
-            auto &ent1 = state.entities[1];
-
-            glm::vec2 start;
-            start.x = ent.pos.x + 0.25;
-            start.y = ent.pos.y;
-
-            glm::vec2 end;
-            end.x = ent1.pos.x;
-            end.y = ent1.pos.y - 0.25;
-
-            curve.pos = start;
-            dSize = end;
-        }
+        ImGui::SliderFloat2("Pos", glm::value_ptr(selectedEnt->getPosition()),
+                            -1.0f, 1.0f);
     }
     ImGui::End();
     end();
@@ -88,7 +73,7 @@ void UI::setViewportTexture(GLuint64 texture) {
 
 void UI::ProjectExplorer() {
     ImGui::Begin("Project Explorer");
-    for (auto &[id, entity] : state.entities) {
+    for (auto &[id, entity] : state.components) {
         if (ImGui::Selectable(("Gate " + std::to_string(id)).c_str(),
                               state.selectedId == id)) {
             state.selectedId = id;

@@ -1,9 +1,9 @@
 #include "renderer/renderer.h"
+#include "camera.h"
 #include "fwd.hpp"
 #include "gl/gl_wrapper.h"
 #include "gl/vertex.h"
 #include "glm.hpp"
-#include "renderer/camera.h"
 #include "ui.h"
 #include <GL/gl.h>
 #include <GLFW/glfw3.h>
@@ -11,7 +11,9 @@
 #include <iostream>
 #include <ostream>
 
-namespace Bess::Renderer2D {
+using namespace Bess::Renderer2D;
+
+namespace Bess {
 
 std::vector<PrimitiveType> Renderer::m_AvailablePrimitives;
 
@@ -22,9 +24,12 @@ std::unordered_map<PrimitiveType, std::vector<Gl::Vertex>> Renderer::m_vertices;
 
 std::unordered_map<PrimitiveType, size_t> Renderer::m_maxRenderCount;
 
-std::shared_ptr<Renderer2D::Camera> Renderer::m_camera;
+std::shared_ptr<Camera> Renderer::m_camera;
 
 std::vector<glm::vec4> Renderer::m_QuadVertices;
+
+int Renderer::m_currentId;
+int Renderer::m_currentSubId;
 
 void Renderer::init() {
 
@@ -76,6 +81,8 @@ void Renderer::init() {
         {0.5f, -0.5f, 0.f, 1.f},
         {0.5f, 0.5f, 0.f, 1.f},
     };
+
+    m_currentId = 1;
 }
 
 void Renderer::quad(const glm::vec2 &pos, const glm::vec2 &size,
@@ -93,7 +100,7 @@ void Renderer::quad(const glm::vec2 &pos, const glm::vec2 &size,
     vertices[2].texCoord = {1.0f, 0.0f};
 
     for (auto &vertex : vertices) {
-        vertex.texIndex = id;
+        vertex.id = id;
         vertex.color = color;
     }
 
@@ -111,7 +118,7 @@ void Renderer::quad(const glm::vec2 &pos, const glm::vec2 &size,
     for (int i = 0; i < 4; i++) {
         auto &vertex = vertices[i];
         vertex.position = transform * m_QuadVertices[i];
-        vertex.texIndex = id;
+        vertex.id = id;
         vertex.color = color;
     }
 
@@ -157,7 +164,7 @@ glm::vec2 Renderer::createCurveVertices(const glm::vec2 &start,
     for (int i = 0; i < 4; i++) {
         auto &vertex = vertices[i];
         vertex.position = transform * m_QuadVertices[i];
-        vertex.texIndex = id;
+        vertex.id = id;
         vertex.color = color;
 
         if (i == 3)
@@ -212,7 +219,7 @@ void Renderer::circle(const glm::vec2 &center, const float radius,
     vertices[2].texCoord = {1.0f, 0.0f};
 
     for (auto &vertex : vertices) {
-        vertex.texIndex = id;
+        vertex.id = id;
         vertex.color = color;
     }
 
@@ -244,10 +251,8 @@ void Renderer::flush(PrimitiveType type) {
     auto selId = UI::state.selectedId;
     auto hoveredId = UI::state.hoveredId;
 
-    if (selId != -1) {
-        shader->setUniform1i("u_SelectedObjId",
-                             type == PrimitiveType::circle ? hoveredId : selId);
-    }
+    shader->setUniform1i("u_SelectedObjId",
+                         type == PrimitiveType::circle ? hoveredId : selId);
 
     vao->setVertices(vertices);
     GL_CHECK(glDrawElements(GL_TRIANGLES, (vertices.size() / 4) * 6,
@@ -257,8 +262,9 @@ void Renderer::flush(PrimitiveType type) {
     shader->unbind();
 }
 
-void Renderer::begin(std::shared_ptr<Renderer2D::Camera> camera) {
+void Renderer::begin(std::shared_ptr<Camera> camera) {
     m_camera = camera;
+    m_currentSubId = m_currentId;
 }
 
 void Renderer::end() {
@@ -267,4 +273,7 @@ void Renderer::end() {
     }
 }
 
-} // namespace Bess::Renderer2D
+int Renderer::getId() { return m_currentId++; }
+
+int Renderer::getSubId() { return m_currentSubId++; }
+} // namespace Bess

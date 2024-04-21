@@ -6,6 +6,6 @@ struct Vertex {
     glm::vec3 position;
     glm::vec3 color;
     glm::vec2 texCoord;
-    int texIndex;
+    int id;
 };
 } // namespace Bess::Gl

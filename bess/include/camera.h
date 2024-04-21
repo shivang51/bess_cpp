@@ -2,7 +2,7 @@
 
 #include "glm.hpp"
 
-namespace Bess::Renderer2D {
+namespace Bess {
 class Camera {
   public:
     Camera();
@@ -34,4 +34,4 @@ class Camera {
 
     void recalculateOrtho();
 };
-} // namespace Bess::Renderer2D
+} // namespace Bess

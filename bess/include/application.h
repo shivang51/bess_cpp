@@ -1,15 +1,13 @@
 #pragma once
 
+#include "camera.h"
 #include "fwd.hpp"
 #include "gl/framebuffer.h"
-#include "renderer/renderer.h"
 #include "window.h"
 #include <memory>
 
-namespace Bess
-{
-  class Application
-  {
+namespace Bess {
+class Application {
   public:
     Application();
     ~Application();
@@ -23,7 +21,7 @@ namespace Bess
     Window m_window;
 
     std::unique_ptr<Gl::FrameBuffer> m_framebuffer;
-    std::shared_ptr<Renderer2D::Camera> m_camera;
+    std::shared_ptr<Camera> m_camera;
 
   private:
     void drawUI();
@@ -50,5 +48,5 @@ namespace Bess
     bool m_middleMousePressed = false;
 
     glm::vec2 m_mousePos = {0, 0};
-  };
+};
 } // namespace Bess

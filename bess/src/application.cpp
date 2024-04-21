@@ -1,10 +1,10 @@
 #include "application.h"
+#include "components/nand_gate.h"
 #include "fwd.hpp"
 #include "gl/framebuffer.h"
 #include "renderer/renderer.h"
 #include "ui.h"
 #include <GLFW/glfw3.h>
-#include <iostream>
 #include <unordered_map>
 
 using Bess::Renderer2D::Renderer;
@@ -23,7 +23,7 @@ namespace Bess {
 Application::Application() : m_window(800, 600, "Bess") {
 
     m_framebuffer = std::make_unique<Gl::FrameBuffer>(800, 500);
-    m_camera = std::make_shared<Renderer2D::Camera>();
+    m_camera = std::make_shared<Camera>();
 
     UI::init(m_window.getGLFWHandle());
     UI::state.viewportTexture = m_framebuffer->getTexture();
@@ -39,13 +39,13 @@ Application::Application() : m_window(800, 600, "Bess") {
     m_window.onMiddleMouse(BIND_EVENT_FN_1(onMiddleMouse));
     m_window.onMouseMove(BIND_EVENT_FN_2(onMouseMove));
 
-    auto &entities = UI::state.entities;
-
-    entities[3] = {{-0.25, -0.25}, {1, 0, 0}, 3, EntityType::quad};
-    entities[1] = {{0.25, 0.25}, {0, 1, 0}, 1, EntityType::quad};
-    entities[2] = {{0.8, 0.8}, {0, 0, 1}, 2, EntityType::quad};
-    entities[7] = {{0.f, 0.f}, {.0f, 1.f, 0.f}, 7, EntityType::curve};
-    entities[8] = {{0.f, 0.f}, {.0f, 1.f, 0.f}, 8, EntityType::curve};
+    auto &comps = UI::state.components;
+    int n = 2;
+    while (n--) {
+        int id = Renderer::getId();
+        comps[id] =
+            std::make_unique<Components::NandGate>(id, glm::vec2(0.f, 0.f));
+    }
 }
 
 Application::~Application() {
@@ -78,29 +78,9 @@ void Application::drawScene() {
 
     bool rendered = true;
 
-    for (auto [id, entity] : UI::state.entities) {
-        switch (entity.type) {
-        case quad:
-            Renderer::quad(entity.pos, {0.25, 0.25}, entity.color, entity.id,
-                           entity.angle);
-            break;
-        case curve:
-            if (!rendered) {
-                auto pos = UI::state.entities[3].pos;
-                Renderer::curve({pos.x + 0.5, pos.y}, UI::dSize, entity.color,
-                                entity.id);
-                rendered = true;
-            } else {
-                Renderer::curve(entity.pos, UI::dSize, entity.color, entity.id);
-            }
-            break;
-        default:
-            break;
-        }
+    for (auto &[id, entity] : UI::state.components) {
+        entity->render();
     }
-
-    Renderer::circle({0., 0.}, 0.1, {1., 1., 1.}, 104);
-    Renderer::circle({0., 0.}, 0.05, {.1f, 0.1f, .1f}, 104);
 
     Renderer::end();
 
@@ -116,10 +96,10 @@ void Application::drawScene() {
 
 void Application::run() {
     while (!m_window.isClosed()) {
-        m_window.waitEvents();
+        m_window.waitEventsTimeout(0.0167);
 
-        drawUI();
         drawScene();
+        drawUI();
 
         m_window.update();
     }
@@ -180,10 +160,13 @@ void Application::onMouseMove(double x, double y) {
     if (m_middleMousePressed) {
         UI::state.cameraPos.x -= (dx * 0.002) / UI::state.cameraZoom;
         UI::state.cameraPos.y -= (dy * 0.002) / UI::state.cameraZoom;
-    } else if (m_leftMousePressed && UI::state.selectedId > 0) {
-        auto &entity = UI::state.entities[UI::state.selectedId];
-        entity.pos.x += (dx * 0.002) / UI::state.cameraZoom;
-        entity.pos.y -= (dy * 0.002) / UI::state.cameraZoom;
+    } else if (m_leftMousePressed && UI::state.selectedId > 0 &&
+               UI::state.components.find(UI::state.selectedId) !=
+                   UI::state.components.end()) {
+        auto &entity = UI::state.components[UI::state.selectedId];
+        auto &pos = entity->getPosition();
+        pos.x += (dx * 0.002) / UI::state.cameraZoom;
+        pos.y -= (dy * 0.002) / UI::state.cameraZoom;
     }
 }
 

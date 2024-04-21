@@ -2,7 +2,6 @@
 
 #include <GLFW/glfw3.h>
 #include <any>
-#include <cassert>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -12,14 +11,14 @@
 namespace Bess {
 
 enum Callback {
-  WindowResize,
-  MouseWheel,
-  KeyPress,
-  KeyRelease,
-  LeftMouse,
-  RightMouse,
-  MiddleMouse,
-  MouseMove
+    WindowResize,
+    MouseWheel,
+    KeyPress,
+    KeyRelease,
+    LeftMouse,
+    RightMouse,
+    MiddleMouse,
+    MouseMove
 };
 
 typedef std::function<void(int, int)> WindowResizeCallback;
@@ -32,44 +31,47 @@ typedef std::function<void(bool)> MiddleMouseCallback;
 typedef std::function<void(double, double)> MouseMoveCallback;
 
 class Window {
-public:
-  struct GLFWwindowDeleter {
-    void operator()(GLFWwindow *window) {
-      std::cout << "Deleteing the window" << std::endl;
-      glfwDestroyWindow(window);
+  public:
+    struct GLFWwindowDeleter {
+        void operator()(GLFWwindow *window) {
+            std::cout << "Deleteing the window" << std::endl;
+            glfwDestroyWindow(window);
+        }
+    };
+
+    Window(int width, int height, const std::string &title);
+    ~Window();
+
+    void update() const;
+    void makeCurrent() const;
+    bool isClosed() const;
+    void close() const;
+
+    inline void pollEvents() const { glfwPollEvents(); }
+    inline void waitEvents() const { glfwWaitEvents(); }
+    inline void waitEventsTimeout(double seconds) const {
+        glfwWaitEventsTimeout(seconds);
     }
-  };
 
-  Window(int width, int height, const std::string &title);
-  ~Window();
+    static bool isGLFWInitialized;
+    static bool isGladInitialized;
 
-  void update() const;
-  void makeCurrent() const;
-  bool isClosed() const;
-  void close() const;
+    void onWindowResize(WindowResizeCallback callback);
+    void onMouseWheel(MouseWheelCallback callback);
+    void onKeyPress(KeyPressCallback callback);
+    void onKeyRelease(KeyReleaseCallback callback);
+    void onLeftMouse(LeftMouseCallback callback);
+    void onRightMouse(RightMouseCallback callback);
+    void onMiddleMouse(MiddleMouseCallback callback);
+    void onMouseMove(MouseMoveCallback callback);
 
-  inline void pollEvents() const { glfwPollEvents(); }
-  inline void waitEvents() const { glfwWaitEvents(); }
+    GLFWwindow *getGLFWHandle() const { return mp_window.get(); }
 
-  static bool isGLFWInitialized;
-  static bool isGladInitialized;
+  private:
+    std::unique_ptr<GLFWwindow, GLFWwindowDeleter> mp_window;
+    std::unordered_map<Callback, std::any> m_callbacks;
 
-  void onWindowResize(WindowResizeCallback callback);
-  void onMouseWheel(MouseWheelCallback callback);
-  void onKeyPress(KeyPressCallback callback);
-  void onKeyRelease(KeyReleaseCallback callback);
-  void onLeftMouse(LeftMouseCallback callback);
-  void onRightMouse(RightMouseCallback callback);
-  void onMiddleMouse(MiddleMouseCallback callback);
-  void onMouseMove(MouseMoveCallback callback);
-
-  GLFWwindow *getGLFWHandle() const { return mp_window.get(); }
-
-private:
-  std::unique_ptr<GLFWwindow, GLFWwindowDeleter> mp_window;
-  std::unordered_map<Callback, std::any> m_callbacks;
-
-  void initOpenGL();
-  void initGLFW();
+    void initOpenGL();
+    void initGLFW();
 };
 } // namespace Bess

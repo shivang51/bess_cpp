@@ -1,8 +1,8 @@
-#include "renderer/camera.h"
+#include "camera.h"
 #include "ext/matrix_clip_space.hpp"
 #include "ext/matrix_transform.hpp"
 
-namespace Bess::Renderer2D {
+namespace Bess {
 Camera::Camera() : m_pos(0.0f), m_zoom(1.0f) {}
 
 Camera::~Camera() {}
@@ -62,4 +62,4 @@ void Camera::updateTransform() {
     transform = m_ortho * transform;
 }
 
-} // namespace Bess::Renderer2D
+} // namespace Bess
